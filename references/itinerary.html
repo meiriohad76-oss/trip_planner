@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<!-- ============================================================================
+  itinerary.html — the main vacation page. Duplicate the marked blocks and fill
+  with the real trip. NO trails / hiking / GPX — this is the sightseeing build.
+
+  For a right-to-left language (Hebrew/Arabic): set <html lang="he" dir="rtl">
+  and swap the font (e.g. Heebo). All layout uses logical properties so RTL works.
+  Sections to fill: hero, one <section> per base (banner + day cards), hotels
+  table, pass/discount cards, opening-hours table, rainy-day bank, packing list.
+============================================================================ -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vacation 2026 · Family Trip Plan</title>
+<meta name="description" content="The full trip plan, arrival to departure: bases, day-by-day plan, hotels, tickets, opening hours and rainy-day alternatives.">
+<meta name="theme-color" content="#0f766e">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏔️</text></svg>">
+<style>
+  :root{
+    --bg:#f7f8f6; --surface:#ffffff; --surface-2:#eef1ee;
+    --ink:#16211d; --ink-2:#4d5b55; --ink-3:#7c8a83; --line:#dfe4e0;
+    --brand:#0f766e; --brand-ink:#0b5f58; --brand-soft:#e3f2f0;
+    --sun:#c2760a; --sun-soft:#fdf1dd; --rain:#2563a8; --rain-soft:#e4eefa;
+    --free:#15803d; --free-soft:#e3f5e8; --pay:#b4413a; --pay-soft:#fbe9e7;
+    --radius:18px;
+    --shadow:0 1px 2px rgba(16,32,28,.04), 0 10px 30px -14px rgba(16,32,28,.2);
+    --shadow-lg:0 20px 50px -20px rgba(16,32,28,.35); --maxw:1180px;
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#0d1412; --surface:#161f1c; --surface-2:#1d2825; --ink:#e8efec; --ink-2:#a9b8b2; --ink-3:#7d8d87;
+    --line:#28332f; --brand:#2dd4bf; --brand-ink:#5eead4; --brand-soft:#12302c;
+    --sun:#e0a458; --sun-soft:#33260f; --rain:#7cb2f0; --rain-soft:#13273d;
+    --free:#5ec97f; --free-soft:#13301d; --pay:#f08a83; --pay-soft:#37201e;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 34px -16px rgba(0,0,0,.7); --shadow-lg:0 24px 60px -24px rgba(0,0,0,.85);
+  }}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth;scroll-padding-top:70px}
+  body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);line-height:1.65;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 20px}
+  img{display:block;max-width:100%}
+  a{color:var(--brand-ink)}
+  .rv{opacity:0;transform:translateY(26px);transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1)}
+  .rv.in{opacity:1;transform:none}
+  /* header */
+  header{position:fixed;inset:0 0 auto 0;z-index:60;transition:.35s}
+  header.solid{background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(14px) saturate(1.4);box-shadow:0 1px 0 var(--line)}
+  .nav{display:flex;align-items:center;gap:14px;height:60px}
+  .logo{font-weight:900;font-size:1.05rem;white-space:nowrap;letter-spacing:-.02em;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,.5);transition:.35s}
+  .logo span{color:#7fe6d8}
+  header.solid .logo{color:var(--ink);text-shadow:none}
+  header.solid .logo span{color:var(--brand)}
+  .nav ul{list-style:none;display:flex;gap:3px;margin-inline-start:auto;overflow-x:auto;scrollbar-width:none}
+  .nav ul::-webkit-scrollbar{display:none}
+  .nav a{display:block;padding:7px 12px;border-radius:99px;color:rgba(255,255,255,.92);text-decoration:none;font-size:.9rem;font-weight:500;white-space:nowrap;text-shadow:0 1px 8px rgba(0,0,0,.5);transition:.2s}
+  header.solid .nav a{color:var(--ink-2);text-shadow:none}
+  .nav a:hover{background:rgba(255,255,255,.16)}
+  header.solid .nav a:hover{background:var(--surface-2);color:var(--ink)}
+  .nav a.on{background:var(--brand);color:#fff;text-shadow:none}
+  /* hero */
+  .hero{position:relative;min-height:100svh;display:flex;align-items:flex-end;overflow:hidden;color:#fff}
+  .hero-bg{position:absolute;inset:-2%;z-index:0;background:url('img/hero.jpg') center 55%/cover no-repeat;animation:kb 26s ease-in-out infinite alternate;will-change:transform}
+  @keyframes kb{from{transform:scale(1.06)}to{transform:scale(1.16) translate3d(1.5%,-1.5%,0)}}
+  .hero::after{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(to top,rgba(6,20,17,.94) 0%,rgba(6,20,17,.62) 34%,rgba(6,20,17,.18) 62%,rgba(6,20,17,.45) 100%)}
+  .hero .wrap{position:relative;z-index:2;padding-bottom:56px;padding-top:110px;width:100%}
+  .eyebrow{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);backdrop-filter:blur(8px);padding:6px 15px;border-radius:99px;font-size:.82rem;font-weight:600;color:#fff}
+  h1{font-size:clamp(2.2rem,6.4vw,4.2rem);font-weight:900;line-height:1.08;letter-spacing:-.035em;margin:20px 0 14px;text-shadow:0 4px 30px rgba(0,0,0,.4)}
+  h1 em{font-style:normal;color:#6ee7d7}
+  .sub{font-size:clamp(1rem,2.4vw,1.25rem);color:rgba(255,255,255,.9);max-width:56ch;text-shadow:0 2px 14px rgba(0,0,0,.5)}
+  .stats{display:flex;flex-wrap:wrap;gap:10px;margin-top:30px}
+  .stat{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.22);backdrop-filter:blur(10px);border-radius:14px;padding:12px 20px;min-width:104px;transition:.3s}
+  .stat:hover{transform:translateY(-4px);background:rgba(255,255,255,.2)}
+  .stat b{display:block;font-size:1.55rem;font-weight:900;line-height:1.2;letter-spacing:-.02em}
+  .stat small{color:rgba(255,255,255,.78);font-size:.78rem;font-weight:500}
+  .stat.count b{color:#6ee7d7}
+  /* sections */
+  section{padding:64px 0;scroll-margin-top:64px}
+  .sec-head{margin-bottom:28px}
+  .sec-head h2{font-size:clamp(1.55rem,3.8vw,2.2rem);font-weight:900;letter-spacing:-.025em;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .sec-head p{color:var(--ink-2);margin-top:8px;max-width:72ch}
+  .seg-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+  .chip{display:inline-flex;align-items:center;gap:6px;background:var(--surface-2);border:1px solid var(--line);padding:5px 12px;border-radius:99px;font-size:.82rem;font-weight:500;color:var(--ink-2)}
+  .chip.brand{background:var(--brand-soft);color:var(--brand-ink);border-color:transparent;font-weight:700}
+  /* banner */
+  .banner{position:relative;height:clamp(210px,32vw,330px);border-radius:24px;overflow:hidden;margin-bottom:30px;box-shadow:var(--shadow-lg);display:flex;align-items:flex-end}
+  .banner img{position:absolute;inset:0;width:100%;height:120%;object-fit:cover;will-change:transform;transform:translateY(var(--par,0px))}
+  .banner::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(6,20,17,.88),rgba(6,20,17,.25) 60%,transparent)}
+  .banner-txt{position:relative;z-index:2;padding:26px 28px;color:#fff}
+  .banner-txt .k{display:inline-block;font-size:.75rem;font-weight:800;letter-spacing:.06em;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);backdrop-filter:blur(6px);padding:4px 12px;border-radius:99px;margin-bottom:9px}
+  .banner-txt h2{font-size:clamp(1.5rem,4vw,2.4rem);font-weight:900;letter-spacing:-.03em;text-shadow:0 3px 20px rgba(0,0,0,.5)}
+  .banner-txt p{font-size:.95rem;color:rgba(255,255,255,.88);margin-top:5px;max-width:60ch}
+  /* gradient banner when there is NO real photo (photo policy: real places only) */
+  .banner.grad{background:linear-gradient(140deg,#0f766e,#0a3f3a 62%,#062724)}
+  .banner.grad.sun{background:linear-gradient(140deg,#c2760a,#8a5107 58%,#5e3604)}
+  .banner.grad.dusk{background:linear-gradient(140deg,#2563a8,#1b4677 58%,#122f52)}
+  .banner.grad .big{position:absolute;inset-inline-end:26px;top:14px;z-index:0;font-size:clamp(4.5rem,13vw,8rem);line-height:1;opacity:.3;transform:rotate(-8deg)}
+  /* day cards */
+  .days{display:grid;gap:18px;grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
+  .day{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;transition:transform .3s cubic-bezier(.16,1,.3,1),box-shadow .3s;border-top:3px solid var(--brand)}
+  .day:hover{transform:translateY(-6px);box-shadow:var(--shadow-lg)}
+  .day.travel{border-top-color:var(--ink-3)}
+  .day.water{border-top-color:var(--rain)}
+  .day-pic{height:172px;overflow:hidden;position:relative;background:var(--surface-2)}
+  .day-pic img{width:100%;height:100%;object-fit:cover;transition:transform .8s cubic-bezier(.16,1,.3,1)}
+  .day:hover .day-pic img{transform:scale(1.08)}
+  .ph{display:grid;place-items:center;font-size:3.2rem;line-height:1;background:radial-gradient(120% 120% at 20% 0%,var(--brand-soft),transparent 70%),linear-gradient(135deg,var(--surface-2),var(--surface))}
+  .ph.rainy{background:radial-gradient(120% 120% at 20% 0%,var(--rain-soft),transparent 70%),linear-gradient(135deg,var(--surface-2),var(--surface))}
+  .ph.sunny{background:radial-gradient(120% 120% at 20% 0%,var(--sun-soft),transparent 70%),linear-gradient(135deg,var(--surface-2),var(--surface))}
+  .day-body{padding:20px;display:flex;flex-direction:column;gap:12px;flex:1}
+  .day-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+  .date{font-size:.78rem;font-weight:700;color:var(--ink-3);letter-spacing:.02em}
+  .day h3{font-size:1.14rem;font-weight:800;line-height:1.35;letter-spacing:-.015em;margin-top:2px}
+  .drive{flex:none;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:6px 10px;text-align:center}
+  .drive .lbl{display:block;font-size:.58rem;color:var(--ink-3);font-weight:800;letter-spacing:.03em}
+  .drive b{display:block;font-size:1rem;font-weight:900;line-height:1.15}
+  .drive small{display:block;font-size:.62rem;color:var(--ink-3);font-weight:600}
+  .drive.walk{background:var(--free-soft);border-color:transparent}
+  .drive.walk b,.drive.walk small,.drive.walk .lbl{color:var(--free)}
+  .day p{font-size:.92rem;color:var(--ink-2)}
+  .day ul{list-style:none;display:flex;flex-direction:column;gap:6px;font-size:.9rem;color:var(--ink-2)}
+  .day li{padding-inline-start:16px;position:relative}
+  .day li::before{content:"▸";position:absolute;inset-inline-start:0;color:var(--brand);font-size:.75rem;top:1px}
+  .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto;padding-top:4px}
+  .tag{font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:99px;background:var(--surface-2);color:var(--ink-2);border:1px solid var(--line)}
+  .tag.free{background:var(--free-soft);color:var(--free);border-color:transparent}
+  .tag.pay{background:var(--pay-soft);color:var(--pay);border-color:transparent}
+  .tag.hours{background:var(--brand-soft);color:var(--brand-ink);border-color:transparent}
+  .alt{background:var(--sun-soft);border-radius:12px;padding:10px 13px;font-size:.85rem;color:var(--ink-2);border-inline-start:3px solid var(--sun)}
+  .alt b{color:var(--sun);font-weight:800}
+  /* waze button */
+  .wazebtn{display:inline-flex;align-items:center;gap:5px;background:#33ccff;color:#04303f;font-weight:800;font-size:.75rem;padding:4px 11px;border-radius:99px;text-decoration:none;line-height:1.5;white-space:nowrap;border:1px solid transparent;transition:.2s}
+  .wazebtn:hover{background:#16c1f5;transform:translateY(-1px)}
+  .wazebtn svg{width:13px;height:13px;fill:currentColor;flex:none}
+  .alt .wazebtn{margin-top:8px}
+  .warn{display:flex;gap:11px;align-items:flex-start;background:var(--pay-soft);border:1px solid color-mix(in srgb,var(--pay) 25%,transparent);border-radius:14px;padding:14px 16px;font-size:.92rem;margin-bottom:24px}
+  .warn b{color:var(--pay)}
+  .warn .ico{font-size:1.15rem;flex:none}
+  /* tables */
+  .tablewrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+  table{width:100%;border-collapse:collapse;min-width:560px;font-size:.92rem}
+  th{text-align:start;padding:14px 16px;font-size:.75rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);background:var(--surface-2);border-bottom:1px solid var(--line);white-space:nowrap}
+  td{padding:13px 16px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--ink-2)}
+  tr:last-child td{border-bottom:none}
+  tbody tr:hover td{background:var(--surface-2)}
+  td strong{color:var(--ink);font-weight:700}
+  .pill{display:inline-block;font-size:.75rem;font-weight:800;padding:3px 9px;border-radius:99px;white-space:nowrap}
+  .pill.free{background:var(--free-soft);color:var(--free)}
+  .pill.pay{background:var(--pay-soft);color:var(--pay)}
+  .pill.card{background:var(--brand-soft);color:var(--brand-ink)}
+  /* cards */
+  .grid{display:grid;gap:18px;grid-template-columns:repeat(auto-fill,minmax(290px,1fr))}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;transition:transform .3s cubic-bezier(.16,1,.3,1),box-shadow .3s}
+  .card:hover{transform:translateY(-6px);box-shadow:var(--shadow-lg)}
+  .card-pic{height:158px;overflow:hidden;background:var(--surface-2)}
+  .card-pic img{width:100%;height:100%;object-fit:cover;transition:transform .8s cubic-bezier(.16,1,.3,1)}
+  .card:hover .card-pic img{transform:scale(1.08)}
+  .card-body{padding:19px;display:flex;flex-direction:column;gap:9px;flex:1}
+  .card .ico{font-size:1.6rem;line-height:1}
+  .card h3{font-size:1.05rem;font-weight:800;letter-spacing:-.015em}
+  .card p{font-size:.9rem;color:var(--ink-2)}
+  .card .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto;padding-top:6px}
+  .rain .card{border-top:3px solid var(--rain)}
+  .sunny .card{border-top:3px solid var(--sun)}
+  .keycard{background:linear-gradient(140deg,var(--brand),var(--brand-ink));border:none;color:#fff}
+  .keycard h3,.keycard p{color:#fff}.keycard p{opacity:.93}
+  .keycard .tag{background:rgba(255,255,255,.2);color:#fff;border-color:transparent}
+  .keycard.sun{background:linear-gradient(140deg,#d98a1f,#a3600a)}
+  /* packing */
+  .packgrid{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+  .pack{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow)}
+  .pack h3{font-size:1.05rem;font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+  .pack label{display:flex;align-items:flex-start;gap:11px;padding:8px 0;font-size:.92rem;color:var(--ink-2);cursor:pointer;border-bottom:1px solid var(--line)}
+  .pack label:last-of-type{border-bottom:none}
+  .pack input{appearance:none;width:20px;height:20px;flex:none;margin-top:2px;border:2px solid var(--line);border-radius:7px;cursor:pointer;transition:.2s;position:relative}
+  .pack input:checked{background:var(--brand);border-color:var(--brand)}
+  .pack input:checked::after{content:"✓";position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:.73rem;font-weight:900}
+  .pack input:checked + span{text-decoration:line-through;color:var(--ink-3)}
+  .reset{margin-top:16px;background:none;border:1px solid var(--line);color:var(--ink-3);padding:7px 15px;border-radius:99px;font:inherit;font-size:.82rem;font-weight:600;cursor:pointer}
+  .note{background:var(--surface-2);border:1px dashed var(--line);border-radius:var(--radius);padding:22px;font-size:.92rem;color:var(--ink-2)}
+  .note h3{color:var(--ink);font-size:1rem;font-weight:800;margin-bottom:6px}
+  .bank-h{display:flex;align-items:center;gap:10px;margin:36px 0 16px;padding-bottom:9px;border-bottom:1px solid var(--line)}
+  .bank-h.first{margin-top:0}
+  .bank-h h3{font-size:1.14rem;font-weight:900;letter-spacing:-.015em}
+  .bank-h .chip{margin-inline-start:auto}
+  footer{border-top:1px solid var(--line);padding:36px 0 44px;margin-top:24px;color:var(--ink-3);font-size:.85rem;text-align:center}
+  footer .credits{margin-top:14px;font-size:.72rem;line-height:1.9;opacity:.85;max-width:80ch;margin-inline:auto}
+  @media (max-width:640px){section{padding:46px 0}.day-body,.card-body,.pack{padding:17px}.stat{flex:1;min-width:calc(50% - 5px)}}
+  @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.rv{opacity:1!important;transform:none!important}.banner img{transform:none!important}}
+</style>
+</head>
+<body>
+
+<header id="hdr"><div class="wrap nav">
+  <div class="logo">🏔️ Vacation <span>2026</span></div>
+  <ul>
+    <li><a href="#seg-1">Base 1</a></li>
+    <li><a href="#seg-2">Base 2</a></li>
+    <li><a href="#hotels">Hotels</a></li>
+    <li><a href="#cards">Tickets</a></li>
+    <li><a href="#hours">Hours</a></li>
+    <li><a href="#rain">Rainy days</a></li>
+    <li><a href="#pack">Packing</a></li>
+    <li><a href="maps.html">Maps</a></li>
+  </ul>
+</div></header>
+
+<!-- ============================ HERO ============================ -->
+<section class="hero" style="scroll-margin:0">
+  <div class="hero-bg"></div>
+  <div class="wrap">
+    <span class="eyebrow rv">✈️ Jul 30 – Aug 23, 2026</span>
+    <h1 class="rv">Three weeks in <em>Austria</em>.<br>Arrival to departure.</h1>
+    <p class="sub rv">The whole family trip in one place — bases, day-by-day plan, tickets, opening hours and rainy-day backups.</p>
+    <div class="stats rv">
+      <div class="stat count"><b id="countdown">—</b><small>days to go</small></div>
+      <div class="stat"><b data-to="25">0</b><small>days</small></div>
+      <div class="stat"><b data-to="4">0</b><small>bases</small></div>
+      <div class="stat"><b data-to="30">0</b><small>attractions</small></div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== ONE <section> PER BASE ====================
+  Duplicate this whole block. The banner is either a real photo (.banner with <img>)
+  OR a gradient (.banner.grad + emoji) when you have no verified photo. Inside .days,
+  each .day is one day. Variants: .day.travel (moving between bases), .day.water
+  (lake/pool day). Use .ph gradient tiles instead of fake day photos. -->
+<section id="seg-1"><div class="wrap">
+  <div class="banner rv">
+    <img src="img/base1.jpg" alt="Base 1 landscape">
+    <div class="banner-txt"><span class="k">WEEK 1 · JUL 30 – AUG 6</span>
+      <h2>🏞️ Base 1 — Lakeside</h2>
+      <p>Short intro to the region: what it's known for and why you're basing here.</p></div>
+  </div>
+
+  <div class="days">
+    <!-- travel/arrival day (no real photo → gradient tile) -->
+    <article class="day travel rv">
+      <div class="day-pic ph"><span>✈️</span></div>
+      <div class="day-body">
+        <div class="day-top"><div><span class="date">Thu · Jul 30</span><h3>Flight, landing & drive to the hotel</h3></div>
+          <div class="drive"><span class="lbl">DRIVE</span><b>1:10</b><small>from airport</small></div></div>
+        <p>Land, pick up the rental car, drive to Base 1, grocery stop, easy evening.</p>
+        <a class="wazebtn" target="_blank" rel="noopener" href="https://waze.com/ul?ll=47.3230,13.1330&navigate=yes"><svg viewBox="0 0 24 24"><path d="M21.4 2.6a1 1 0 0 0-1.1-.2L3.3 9.9c-1 .4-.9 1.9.1 2.2l6.7 2.1 2.1 6.7c.3 1 1.8 1.1 2.2.1l7.7-17a1 1 0 0 0-.7-1.4z"/></svg>Navigate to hotel</a>
+        <div class="tags"><span class="tag">Arrival</span><span class="tag hours">🕘 Check-in 15:00</span></div>
+      </div>
+    </article>
+
+    <!-- a normal attraction day WITH a real photo -->
+    <article class="day rv">
+      <div class="day-pic"><img src="img/attraction1.jpg" alt="Attraction"></div>
+      <div class="day-body">
+        <div class="day-top"><div><span class="date">Fri · Jul 31</span><h3>Big attraction day</h3></div>
+          <div class="drive"><span class="lbl">DRIVE</span><b>15</b><small>min</small></div></div>
+        <p>What you'll do, why it's great for the kids, timing tip.</p>
+        <ul><li>Get there by 09:30 to beat the queue</li><li>Lunch on site</li><li>Playground before leaving</li></ul>
+        <div class="tags"><span class="tag pay">Paid</span><span class="tag hours">🕘 09:00–17:00</span></div>
+      </div>
+    </article>
+
+    <!-- a lake/water day, with a rainy-day alternative baked in -->
+    <article class="day water rv">
+      <div class="day-pic ph sunny"><span>🏊</span></div>
+      <div class="day-body">
+        <div class="day-top"><div><span class="date">Sat · Aug 1</span><h3>Lake day</h3></div>
+          <div class="drive walk"><span class="lbl">WALK</span><b>4</b><small>min</small></div></div>
+        <p>Swimming, boats, and lazing on the beach.</p>
+        <div class="alt"><b>If it rains:</b> the indoor thermal baths 12 min away.
+          <a class="wazebtn" target="_blank" rel="noopener" href="https://waze.com/ul?ll=47.4510,12.8880&navigate=yes"><svg viewBox="0 0 24 24"><path d="M21.4 2.6a1 1 0 0 0-1.1-.2L3.3 9.9c-1 .4-.9 1.9.1 2.2l6.7 2.1 2.1 6.7c.3 1 1.8 1.1 2.2.1l7.7-17a1 1 0 0 0-.7-1.4z"/></svg>Baths</a></div>
+        <div class="tags"><span class="tag free">Free</span></div>
+      </div>
+    </article>
+  </div>
+</div></section>
+
+<!-- Second base uses a GRADIENT banner (no verified photo available) -->
+<section id="seg-2"><div class="wrap">
+  <div class="banner grad sun rv"><span class="big">⛲</span>
+    <div class="banner-txt"><span class="k">WEEK 2 · AUG 7 – AUG 13</span>
+      <h2>⛲ Base 2 — Village</h2><p>Intro to the second region.</p></div>
+  </div>
+  <div class="warn rv"><span class="ico">⚠️</span><div><b>Planning note:</b> flag anything time-sensitive here — a lift that opens at 09:00, a toll road, a museum closed on Mondays.</div></div>
+  <div class="days">
+    <article class="day rv"><div class="day-pic ph"><span>🦌</span></div><div class="day-body">
+      <div class="day-top"><div><span class="date">Sun · Aug 2</span><h3>Wildlife park</h3></div>
+        <div class="drive"><span class="lbl">DRIVE</span><b>14</b><small>min</small></div></div>
+      <p>Native animals on a stroller-friendly loop; midday feeding.</p>
+      <div class="tags"><span class="tag pay">Paid</span><span class="tag hours">🕘 09:00–17:00</span></div>
+    </div></article>
+  </div>
+</div></section>
+
+<!-- ============================ HOTELS + CAR ============================ -->
+<section id="hotels"><div class="wrap">
+  <div class="sec-head rv"><h2>🏨 Hotels & the rental car</h2><p>Where you sleep each stretch, and the car details.</p></div>
+  <div class="tablewrap rv"><table>
+    <thead><tr><th>Base</th><th>Hotel</th><th>Nights</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Base 1</strong></td><td>Sample Hotel — Lakeside</td><td>Jul 30 – Aug 6 · 7</td><td>Free parking · breakfast included</td></tr>
+      <tr><td><strong>Base 2</strong></td><td>Sample Hotel — Village</td><td>Aug 7 – Aug 13 · 6</td><td>Apartment · kitchenette</td></tr>
+    </tbody>
+  </table></div>
+  <div style="margin-top:20px" class="note rv"><h3>🚗 The car — Rental Co · Vienna Airport</h3>
+    Pickup Jul 30, drop-off Aug 23. Confirmation #, class, and a note about the vignette/toll sticker.</div>
+</div></section>
+
+<!-- ============================ DISCOUNT / CITY CARDS ============================ -->
+<section id="cards"><div class="wrap">
+  <div class="sec-head rv"><h2>🎟️ Tickets — what's free, what's not</h2><p>Which pass covers what, so you don't pay twice.</p></div>
+  <div class="grid" style="margin-bottom:22px">
+    <div class="card keycard rv"><div class="card-body"><div class="ico">🎟️</div><h3>Region Card</h3><p>Free entry / cable cars at listed spots. Included with your stay.</p><div class="meta"><span class="tag">Included</span></div></div></div>
+    <div class="card keycard sun rv"><div class="card-body"><div class="ico">☀️</div><h3>Guest Card</h3><p>Discounts on baths and museums; ask at check-in.</p><div class="meta"><span class="tag">On request</span></div></div></div>
+  </div>
+  <div class="tablewrap rv"><table>
+    <thead><tr><th>Attraction</th><th>Pass</th><th>Details</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Cable car</strong> · Base 1</td><td><span class="pill card">Region Card</span></td><td><span class="pill free">Free</span> up & down, once per day.</td></tr>
+      <tr><td><strong>Thermal baths</strong> · Base 2</td><td><span class="pill card">Guest Card</span></td><td><span class="pill pay">Paid</span> 10% off · cash only.</td></tr>
+    </tbody>
+  </table></div>
+</div></section>
+
+<!-- ============================ OPENING HOURS ============================ -->
+<section id="hours"><div class="wrap">
+  <div class="sec-head rv"><h2>🕘 Opening hours</h2><p>Verify close to travel — these change seasonally.</p></div>
+  <div class="tablewrap rv"><table>
+    <thead><tr><th>Place</th><th>Season</th><th>Hours</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Cable car</strong></td><td>May–Oct</td><td>09:00–16:30 · weather-dependent</td></tr>
+      <tr><td><strong>Wildlife park</strong></td><td>Year-round</td><td>Daily 09:00–17:00</td></tr>
+      <tr><td><strong>Supermarket (Base 1)</strong></td><td>—</td><td>Mon–Fri 07:15–19:00 · Sat to 18:00 · <strong>Sun closed</strong></td></tr>
+    </tbody>
+  </table></div>
+</div></section>
+
+<!-- ============================ RAINY-DAY BANK ============================ -->
+<section id="rain"><div class="wrap">
+  <div class="sec-head rv"><h2>☔ Rainy-day backup bank</h2><p>Indoor options per region, ready when the weather turns.</p></div>
+  <div class="bank-h first rv"><h3>🏞️ Base 1</h3><span class="chip brand">Jul 30 – Aug 6</span></div>
+  <div class="grid rain">
+    <div class="card rv"><div class="card-pic ph rainy"><span>🏊</span></div><div class="card-body"><h3>Thermal baths</h3><p>Indoor pools, slides and sauna — 12 min away.</p><div class="meta"><span class="tag hours">🕘 10:00–21:00</span></div></div></div>
+    <div class="card rv"><div class="card-pic ph rainy"><span>🏛️</span></div><div class="card-body"><h3>Local museum</h3><p>Interactive exhibits, good for 1–2 hours.</p><div class="meta"><span class="tag pay">Paid</span></div></div></div>
+  </div>
+  <div class="bank-h rv"><h3>⛲ Base 2</h3><span class="chip brand">Aug 7 – Aug 13</span></div>
+  <div class="grid rain">
+    <div class="card rv"><div class="card-pic ph rainy"><span>🦎</span></div><div class="card-body"><h3>Indoor zoo</h3><p>Covered, great rainy-day fallback.</p><div class="meta"><span class="tag">Family</span></div></div></div>
+  </div>
+</div></section>
+
+<!-- ============================ PACKING (localStorage checklist) ============================ -->
+<section id="pack"><div class="wrap">
+  <div class="sec-head rv"><h2>🎒 Packing list</h2><p>Ticks are saved on this device.</p></div>
+  <div class="packgrid">
+    <div class="pack rv"><h3>👕 Clothes</h3>
+      <label><input type="checkbox"><span>Layers + a warm fleece (mountains get cold)</span></label>
+      <label><input type="checkbox"><span>Rain jackets</span></label>
+      <label><input type="checkbox"><span>Swimwear + water shoes</span></label>
+    </div>
+    <div class="pack rv"><h3>📄 Documents</h3>
+      <label><input type="checkbox"><span>Passports</span></label>
+      <label><input type="checkbox"><span>Car rental confirmation</span></label>
+      <label><input type="checkbox"><span>Travel insurance</span></label>
+    </div>
+  </div>
+  <button class="reset" id="reset">Reset checklist</button>
+</div></section>
+
+<footer><div class="wrap">
+  Vacation 2026 · built with the vacation-site-builder skill.
+  <div class="credits" id="credits"><!-- photo credits injected from img/credits.json --></div>
+</div></footer>
+
+<script>
+(function(){
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  /* countdown — set your departure date (year, MONTH-1, day) */
+  var cd = document.getElementById('countdown');
+  var now = new Date(); now.setHours(0,0,0,0);
+  var d = Math.round((new Date(2026,6,30) - now)/86400000);
+  cd.textContent = d > 0 ? d : (d === 0 ? 'today!' : '🎉');
+  /* reveal on scroll (staggered) */
+  var seen = new WeakSet();
+  var ro = new IntersectionObserver(function(es){var i=0;es.forEach(function(e){if(!e.isIntersecting||seen.has(e.target))return;seen.add(e.target);setTimeout(function(){e.target.classList.add('in');},reduce?0:Math.min(i++*70,350));ro.unobserve(e.target);});},{threshold:.12,rootMargin:'0px 0px -8% 0px'});
+  document.querySelectorAll('.rv').forEach(function(el){ro.observe(el);});
+  document.querySelectorAll('.hero .rv').forEach(function(el,i){seen.add(el);setTimeout(function(){el.classList.add('in');},reduce?0:120+i*130);});
+  /* count-up stats */
+  setTimeout(function(){document.querySelectorAll('.stat b[data-to]').forEach(function(el){var to=+el.dataset.to;if(reduce){el.textContent=to;return;}var t0=null;requestAnimationFrame(function step(ts){if(!t0)t0=ts;var p=Math.min((ts-t0)/900,1);el.textContent=Math.round(to*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(step);});});},500);
+  /* sticky header + scroll-spy + banner parallax on one rAF loop */
+  var hdr=document.getElementById('hdr');
+  var heroH=function(){return Math.max(innerHeight*.72,300);};
+  var links=[].slice.call(document.querySelectorAll('.nav a[href^="#"]'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'));});
+  var so=new IntersectionObserver(function(es){es.forEach(function(e){if(!e.isIntersecting)return;links.forEach(function(a,i){a.classList.toggle('on',secs[i]===e.target);});});},{rootMargin:'-45% 0px -50% 0px'});
+  secs.forEach(function(s){if(s)so.observe(s);});
+  var banners=[].slice.call(document.querySelectorAll('.banner img'));
+  var ticking=false;
+  function frame(){hdr.classList.toggle('solid',scrollY>heroH()-70);if(!reduce){banners.forEach(function(img){var r=img.parentElement.getBoundingClientRect();if(r.bottom<-200||r.top>innerHeight+200)return;var p=(r.top+r.height/2-innerHeight/2)/innerHeight;img.style.setProperty('--par',(p*-34).toFixed(1)+'px');});}ticking=false;}
+  addEventListener('scroll',function(){if(!ticking){ticking=true;requestAnimationFrame(frame);}},{passive:true});frame();
+  /* packing checklist persisted in localStorage */
+  var boxes=[].slice.call(document.querySelectorAll('.pack input'));
+  boxes.forEach(function(b,i){var k='pack-'+i;b.checked=localStorage.getItem(k)==='1';b.addEventListener('change',function(){localStorage.setItem(k,b.checked?'1':'0');});});
+  document.getElementById('reset').addEventListener('click',function(){boxes.forEach(function(b,i){b.checked=false;localStorage.removeItem('pack-'+i);});});
+  /* photo credits from img/credits.json (CC attribution) */
+  fetch('img/credits.json').then(function(r){return r.ok?r.json():{};}).then(function(c){
+    var el=document.getElementById('credits');var parts=[];
+    Object.keys(c).forEach(function(k){var x=c[k];parts.push('<a href="'+x.page+'" target="_blank" rel="noopener">'+x.file+'</a> — '+x.author+' ('+x.license+')');});
+    if(parts.length)el.innerHTML='Photos: '+parts.join(' · ');
+  }).catch(function(){});
+})();
+</script>
+</body>
+</html>
