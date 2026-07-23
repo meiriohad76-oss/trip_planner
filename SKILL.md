@@ -1,6 +1,6 @@
 ---
 name: vacation-site-builder
-description: Build a complete, deployable family vacation website — a hero with a live countdown, a day-by-day itinerary per base, hotels & rental-car details, discount/city-card coverage tables, opening hours, a rainy-day alternatives bank, a packing checklist, and a separate interactive Leaflet map page of attractions, restaurants and supermarkets with drive times and one-tap navigation. Real Wikimedia photos, no invented image URLs. Use when asked to build a trip/holiday/vacation website or itinerary site for sightseeing (NOT trails/hiking/running — for those use trail-route-planner).
+description: Build a complete, deployable family vacation website — a hero with a live countdown, a day-by-day itinerary per base, hotels & rental-car details, discount/city-card coverage tables, opening hours, a rainy-day alternatives bank, a packing checklist, and a separate interactive Leaflet map page of attractions, restaurants and supermarkets with drive times and one-tap navigation. Includes a per-region deals & savings research playbook (attraction and restaurant coupons, guest/city cards, and region-active apps like Too Good To Go and TheFork). Real Wikimedia photos, no invented image URLs. Use when asked to build a trip/holiday/vacation website or itinerary site for sightseeing (NOT trails/hiking/running — for those use trail-route-planner).
 ---
 
 # Vacation site builder
@@ -59,7 +59,23 @@ Spawn a subagent per base/region. Demand from each, as structured data:
 - **Rainy-day indoor options** per region.
 Tell them to say "could not verify" rather than invent an address, hour, or coord.
 
-### 2. Get REAL photos — never hand-write an image URL
+### 2. Hunt deals & savings — per region (optional, ask first)
+If the user wants the trip to be economical, run a **deals & savings pass** per
+region following `references/coupon-research.md`. Spawn one research subagent per
+base, feeding it the real attraction/restaurant list from step 1, and check every
+channel in that playbook: coupon aggregators (Groupon & local clones — usually a
+dead end, verify anyway), ticket resellers (GetYourGuide/Tiqets/Klook), the
+**attraction's own online shop** (dynamic/early-bird/family/evening rates — where
+the real savings are), **free guest cards + paid region/city cards** (so nobody
+pays for what's already free), **restaurant savings** (TheFork, fixed lunch menus,
+kids-eat-free), **surplus-food apps active in that region** (Too Good To Go, Karma,
+Olio…), and grocery loyalty programs. Follow the same verification discipline as
+the rest of the skill: **never invent a promo code or price**, always note blackout
+dates and tourist-usability, prefer official pages. Deliver it as a briefing grouped
+by region with a short "most-actionable" list. **Do not put any of it on the site
+unless the user explicitly asks** — the playbook lists where it fits if they do.
+
+### 3. Get REAL photos — never hand-write an image URL
 Pick hero + per-base banner + a few marquee attraction photos. For each, find the
 Wikimedia Commons file, then:
 
@@ -73,7 +89,7 @@ photos in the HTML as `img/<key>.jpg`. **Anything unresolved gets a gradient til
 (`.banner.grad` / `.ph` classes), never a fake photo. Render `credits.json` in the
 footer — CC licenses require attribution (the template already fetches it).
 
-### 3. Build the pages from the templates
+### 4. Build the pages from the templates
 Copy the three reference files into the project and fill them with real content:
 - `references/itinerary.html` → `index.html`
 - `references/maps.html` → `maps.html`
@@ -93,7 +109,7 @@ Data hygiene that makes or breaks it:
 - Days with no verified photo use `.ph` gradient tiles; bases with no photo use
   `.banner.grad`. Never stretch one photo across unrelated days.
 
-### 4. Verify before shipping
+### 5. Verify before shipping
 - Open both pages in a browser (`vercel:verification` or the `run` skill / a local
   `python3 -m http.server`). Check: countdown shows a sane number, maps render with
   pins, filters/search/sort work, nav scroll-spy highlights, dark mode looks right,
@@ -102,7 +118,7 @@ Data hygiene that makes or breaks it:
   they all lose trust.
 - Confirm every `<img>` resolves (no broken images) and credits show in the footer.
 
-### 5. Deploy
+### 6. Deploy
 This kind of static site deploys cleanly on Vercel (the sibling project already
 uses it). Use the `vercel:deploy` skill, or `vercel --prod`. Commit only when the
 user asks; if deploying from a fresh repo, `vercel` links it first. Give the user
@@ -123,3 +139,6 @@ the URL.
 - `references/itinerary.html` — the main page template (full design system + JS).
 - `references/maps.html` — interactive Leaflet maps page template.
 - `references/maps-data.js` — POI data schema with sample entries.
+- `references/coupon-research.md` — per-region deals & savings playbook (attraction/
+  restaurant coupons, guest/city cards, surplus-food & loyalty apps like Too Good To
+  Go and TheFork), with verification discipline and where findings fit on the site.
