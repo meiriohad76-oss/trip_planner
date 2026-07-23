@@ -1,44 +1,111 @@
-# vacation-site-builder
+<p align="center">
+  <img src="docs/banner.jpg" alt="vacation-site-builder — your family trip, as a website" width="100%">
+</p>
 
-A [Claude Code](https://claude.com/claude-code) skill that builds a complete, deployable **family vacation website** — sightseeing and logistics, no trails or hiking.
+<p align="center">
+  <a href="https://claude.com/claude-code"><img alt="Claude Code skill" src="https://img.shields.io/badge/Claude%20Code-skill-6f42c1"></a>
+  <img alt="Static site" src="https://img.shields.io/badge/output-static%20HTML%20%2B%20JS-0ea5e9">
+  <img alt="Maps" src="https://img.shields.io/badge/maps-Leaflet%20%2B%20OpenStreetMap-16a34a">
+  <img alt="Deploy" src="https://img.shields.io/badge/deploys-Vercel-000000">
+  <img alt="RTL" src="https://img.shields.io/badge/i18n-LTR%20%2B%20RTL-f59e0b">
+</p>
 
-Give it your bases, dates, and kids' ages, and it produces a two-page site:
+<p align="center">
+  <b>Give it your bases, dates and kids' ages — get back a trip site you actually use on the road.</b>
+</p>
 
-- **`index.html`** — hero with a live countdown, a day-by-day itinerary per base, a hotels & rental-car table, discount/city-card coverage tables, opening hours, a rainy-day alternatives bank, and a localStorage packing checklist.
-- **`maps.html` + `maps-data.js`** — an interactive Leaflet map per base: filter by category, search, sort by distance from the hotel, with drive times, opening hours, pass badges, Sunday-supermarket badges, and one-tap Waze / Google Maps navigation.
+---
+
+## The two pages it builds
+
+|  |  |
+|---|---|
+| **`index.html`** | Hero with a live countdown, day-by-day itinerary per base, hotels & rental-car table, discount/city-card coverage, opening hours, a rainy-day alternatives bank, and a localStorage packing checklist. |
+| **`maps.html` + `maps-data.js`** | An interactive Leaflet map per base: filter by category, search, sort by distance from the hotel, with drive times, opening hours, pass badges, Sunday-supermarket badges and one-tap Waze / Google Maps navigation. |
+
+<br>
+
+<img src="docs/itinerary.jpg" alt="Day-by-day itinerary with expandable days, attraction cards and lodging" width="100%">
+
+<p align="center"><sub>Day-by-day timeline — tap a day to open its attractions, photos, lodging and one-tap navigation.</sub></p>
+
+<br>
+
+<img src="docs/maps.jpg" alt="Interactive maps page with category filters, search and distance sorting" width="100%">
+
+<p align="center"><sub><code>maps.html</code> — filter by category, search, sort by distance from the hotel, tap Waze or Maps.</sub></p>
+
+<br>
+
+<table>
+<tr>
+<td width="50%"><img src="docs/regions.jpg" alt="Per-region map with numbered attraction markers" width="100%"></td>
+<td width="50%"><img src="docs/cards.jpg" alt="Discount and city-card comparison cards" width="100%"></td>
+</tr>
+<tr>
+<td align="center"><sub>Per-base maps with numbered markers, tied to the itinerary.</sub></td>
+<td align="center"><sub>City / guest-card coverage, cross-checked against the plan.</sub></td>
+</tr>
+</table>
 
 ## What makes it different
 
 The value isn't the itinerary prose — any LLM writes "visit the old town." The value is that the site is **real and usable on the trip**:
 
-- **Real photos, never invented URLs.** `scripts/fetch_photos.py` pulls verified images from Wikimedia Commons and writes an attribution `credits.json`. Anything it can't resolve becomes a gradient tile — never a fake `<img src>`.
-- **Verified coordinates, drive times and opening hours** — or an explicit "couldn't confirm."
-- **Discount-card coverage** cross-checked so the itinerary and maps agree.
-- **Deploys** cleanly to Vercel as plain static files.
+- 📷 **Real photos, never invented URLs.** `scripts/fetch_photos.py` pulls verified images from Wikimedia Commons and writes an attribution `credits.json`. Anything it can't resolve becomes a gradient tile — never a fake `<img src>`.
+- 📍 **Verified coordinates, drive times and opening hours** — or an explicit "couldn't confirm."
+- 🎟 **Discount-card coverage** cross-checked so the itinerary and the maps agree.
+- 💸 **A per-region deals & savings playbook** — attraction and restaurant coupons, guest/city cards, and region-active apps (Too Good To Go, TheFork).
+- 🚀 **Deploys** cleanly to Vercel as plain static files.
 
-Light/dark theme, reveal animations, sticky scroll-spy nav, RTL (Hebrew/Arabic) support.
+Light/dark theme, reveal animations, sticky scroll-spy nav, and full RTL (Hebrew/Arabic) support.
 
-> For running/hiking/cycling routes with GPX and elevation, use the sibling skill [trail-route-planner](https://github.com/sdanpo/trail-route-planner) instead.
+## A real trip built this way
+
+<a href="https://austria-trip-2026-sdanpos-projects.vercel.app/"><img src="docs/hero-live.jpg" alt="A live family trip site — Austria, August 2026" width="100%"></a>
+
+<p align="center"><sub>15 days, 5 bases, 32 attractions — in Hebrew, right-to-left. <a href="https://austria-trip-2026-sdanpos-projects.vercel.app/">See it live →</a></sub></p>
 
 ## Install
-
-Clone into your Claude Code skills directory:
 
 ```bash
 git clone https://github.com/sdanpo/vacation-site-builder ~/.claude/skills/vacation-site-builder
 ```
 
-Then just ask Claude Code to build a vacation site, or run `/vacation-site-builder`.
+Then ask Claude Code to build a vacation site, or run `/vacation-site-builder`.
+
+**A good first prompt:**
+
+> Build a vacation site for our family trip to Austria, 5–19 Aug 2026.
+> Bases: Werfenweng (nights 1–3), Ellmau (4–8), Mayrhofen (9–11), Ötz (12–15).
+> Kids are 8 and 12. We have a rental car. Hebrew, RTL.
 
 ## Layout
 
 ```
 vacation-site-builder/
-├── SKILL.md                 # workflow + guardrails
+├── SKILL.md                    # workflow + guardrails
 ├── scripts/
-│   └── fetch_photos.py      # Wikimedia Commons downloader + credits.json
+│   └── fetch_photos.py         # Wikimedia Commons downloader + credits.json
 └── references/
-    ├── itinerary.html       # main page template (full design system + JS)
-    ├── maps.html            # interactive Leaflet maps page
-    └── maps-data.js         # POI data schema with samples
+    ├── itinerary.html          # main page template (full design system + JS)
+    ├── maps.html               # interactive Leaflet maps page
+    ├── maps-data.js            # POI data schema with samples
+    └── coupon-research.md      # per-region deals & savings playbook
 ```
+
+## Sibling skill
+
+Hiking, running or cycling routes — with GPX, elevation profiles and a terrain-difficulty audit — are a different job. Use **[trail-route-planner](https://github.com/sdanpo/trail-route-planner)** for those.
+
+<a href="https://peru-trek.vercel.app/"><img src="docs/sibling-trek.jpg" alt="A trek site built with the sibling skill trail-route-planner" width="100%"></a>
+
+<p align="center"><sub><a href="https://peru-trek.vercel.app/">peru-trek.vercel.app</a> — Salkantay & Machu Picchu, day by day.</sub></p>
+
+---
+
+<p align="center"><sub>
+Banner photo by <a href="https://unsplash.com/@olgamandel">Olga Mandel</a> on <a href="https://unsplash.com/photos/KpZWF9Y1YtU">Unsplash</a> ·
+Site photos from <a href="https://commons.wikimedia.org/">Wikimedia Commons</a> ·
+Maps © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors
+</sub></p>
