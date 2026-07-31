@@ -45,6 +45,18 @@ A two-page site, both self-contained, sharing one design system:
   works in that country.
 - **`img/`** — real Wikimedia photos + `credits.json` (attribution is required).
 
+## Running the scripts
+
+Commands below use POSIX form (`python3`, forward slashes). **On Windows** use
+`python` (or `py` if `python` opens the Microsoft Store) and backslashes, and
+note that PowerShell does **not** accept `&&` as a separator — put each command
+on its own line or join with `;`:
+
+```powershell
+cd "D:\trip planning app"
+python scripts\fetch_places.py bases.json maps-data.js
+```
+
 ## Workflow
 
 ### 0. Pull the map data from OpenStreetMap first

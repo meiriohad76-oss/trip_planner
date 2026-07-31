@@ -116,10 +116,14 @@ The templates ship with a headless browser suite, so a change to `maps.html`
 can be checked rather than eyeballed:
 
 ```bash
-pip install playwright && playwright install chromium
+pip install playwright
+playwright install chromium
 python3 tests/test_maps.py
 python3 tests/test_nbase.py
 ```
+
+On Windows, use `python` (or `py`) instead of `python3`, backslashes in paths,
+and one command per line — PowerShell does not accept `&&` as a separator.
 
 `test_maps.py` feeds the template deliberately hostile data — string coordinates,
 an out-of-range latitude, a missing longitude, a non-numeric drive time and a
