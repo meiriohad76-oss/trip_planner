@@ -375,12 +375,29 @@
 
 <script>
 (function(){
+  /* ===================== TEMPLATE CONFIG — EDIT THIS =====================
+     The ONLY JS you need to change per trip. Everything else derives from it.
+     Search the HTML above for these too — they are not driven from here:
+       · <title> and <meta name="description">      (head)
+       · the .logo text in <header>                  ("🏔️ Vacation 2026")
+       · the <li> nav links, one per base section
+       · the .eyebrow date range and <h1> in the hero
+       · data-to="…" on the .stat counters (days / bases / attractions)
+       · the footer line
+     ====================================================================== */
+  var CONFIG = {
+    departure: '2026-07-30'   // YYYY-MM-DD, local time. Drives the countdown.
+  };
+
   var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  /* countdown — set your departure date (year, MONTH-1, day) */
+  /* countdown */
   var cd = document.getElementById('countdown');
   var now = new Date(); now.setHours(0,0,0,0);
-  var d = Math.round((new Date(2026,6,30) - now)/86400000);
-  cd.textContent = d > 0 ? d : (d === 0 ? 'today!' : '🎉');
+  var parts = CONFIG.departure.split('-').map(Number);
+  var dep = new Date(parts[0], parts[1] - 1, parts[2]);
+  if (isNaN(dep)) { console.error('itinerary.html: CONFIG.departure is not a valid YYYY-MM-DD date.'); }
+  var d = Math.round((dep - now)/86400000);
+  cd.textContent = isNaN(d) ? '—' : (d > 0 ? d : (d === 0 ? 'today!' : '🎉'));
   /* reveal on scroll (staggered) */
   var seen = new WeakSet();
   var ro = new IntersectionObserver(function(es){var i=0;es.forEach(function(e){if(!e.isIntersecting||seen.has(e.target))return;seen.add(e.target);setTimeout(function(){e.target.classList.add('in');},reduce?0:Math.min(i++*70,350));ro.unobserve(e.target);});},{threshold:.12,rootMargin:'0px 0px -8% 0px'});

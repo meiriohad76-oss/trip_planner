@@ -264,9 +264,41 @@
     render();
   }
 
-  var D=window.MAPDATA;
-  build({mapId:'map1',ctrlId:'ctrl-1',listId:'list-1',countId:'count-1',legendId:'legend-1',hotel:D.base1.hotel,pois:D.base1.pois});
-  build({mapId:'map2',ctrlId:'ctrl-2',listId:'list-2',countId:'count-2',legendId:'legend-2',hotel:D.base2.hotel,pois:D.base2.pois});
+  /* ===================== TEMPLATE CONFIG — READ THIS =====================
+     This walks every key in window.MAPDATA in order, and expects ONE matching
+     <section> block in the HTML above per key, numbered from 1:
+
+        base #1  ->  #map1  #ctrl-1  #list-1  #count-1  #legend-1
+        base #2  ->  #map2  #ctrl-2  #list-2  #count-2  #legend-2
+        base #3  ->  #map3  #ctrl-3  ...      and so on
+
+     To add a base: duplicate a <section> block above, bump every id, and add
+     the matching key to maps-data.js. Nothing here needs editing.
+
+     Previously this file hardcoded exactly two build() calls, so a 3+ base
+     trip silently rendered only the first two. Any mismatch now shouts in the
+     console instead of quietly dropping a base.
+     ====================================================================== */
+  var D=window.MAPDATA||{};
+  var keys=Object.keys(D);
+  if(!keys.length)console.error('maps-data.js: window.MAPDATA is empty — no maps to build.');
+  keys.forEach(function(key,i){
+    var n=i+1;
+    var ids={mapId:'map'+n,ctrlId:'ctrl-'+n,listId:'list-'+n,countId:'count-'+n,legendId:'legend-'+n};
+    var missing=Object.keys(ids).filter(function(k){return !document.getElementById(ids[k]);});
+    if(missing.length){
+      console.error('maps.html: base "'+key+'" (#'+n+') has no matching HTML section — missing '+
+        missing.map(function(k){return '#'+ids[k];}).join(', ')+
+        '. Duplicate a <section> block and bump its ids.');
+      return;
+    }
+    build({mapId:ids.mapId,ctrlId:ids.ctrlId,listId:ids.listId,countId:ids.countId,
+           legendId:ids.legendId,hotel:D[key].hotel,pois:D[key].pois});
+  });
+  /* a leftover <section> with no data is just as broken as the reverse */
+  if(document.getElementById('map'+(keys.length+1)))
+    console.error('maps.html: there is a #map'+(keys.length+1)+' section with no matching key in '+
+      'maps-data.js — it will stay blank. Remove the section or add the base.');
 })();
 </script>
 </body>
