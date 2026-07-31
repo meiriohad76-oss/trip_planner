@@ -54,6 +54,11 @@ python3 scripts/fetch_places.py bases.json maps-data.js
 python3 tests/validate_data.py maps-data.js
 ```
 
+`bases.json` needs a `"country"` (ISO-3166 alpha-2). It drives the closing-day
+badge, distance units and which navigation apps actually work — see
+`scripts/regions.py`. Without it those all fall back to neutral defaults and the
+badge is suppressed rather than guessed.
+
 This does **not** replace step 1 — on a live sample only about half of OSM POIs
 carried `opening_hours`, and OSM can be years stale. It changes the subagent's
 job from "find and transcribe 30 places" (where invented coordinates come from)
@@ -76,7 +81,10 @@ Spawn a subagent per base/region. Demand from each, as structured data:
   official sites), and whether a **discount card** covers it.
 - **Drive time from the hotel** (a router, not a guess).
 - **Restaurants** (family-friendly, near each base) and **supermarkets** with
-  **Sunday hours** — in AT/DE most close Sundays; the map badges this.
+  hours for the destination's **closing day** — Austria and Germany rest on
+  Sunday, Israel on Saturday (and Friday afternoon), much of the Gulf on Friday,
+  while Japan, the US and most of Asia close nothing. `scripts/regions.py` holds
+  the rule per country; the map badges the right day, or hides the badge.
 - **Rainy-day indoor options** per region.
 Tell them to say "could not verify" rather than invent an address, hour, or coord.
 
@@ -147,7 +155,9 @@ RTL font; the layout uses logical properties so it already flips.
 
 Data hygiene that makes or breaks it:
 - Every map POI needs a **real** `lat,lng`, a `category`, `drive_min`, and
-  (attractions) verified `hours`. Supermarkets need `sunday: open|limited|closed`.
+  (attractions) verified `hours`. Supermarkets need `closed_days`, e.g.
+  `{Su:"closed"}` in Austria or `{Sa:"closed",Fr:"limited"}` in Israel.
+- `maps.html` reads `window.TRIPREGION` for the closing day, units and nav apps.
 - Tag each attraction with `pass:true` only if the discount card genuinely covers
   it — cross-check against the coverage table so the two pages agree.
 - Days with no verified photo use `.ph` gradient tiles; bases with no photo use
@@ -161,7 +171,9 @@ Data hygiene that makes or breaks it:
   python3 tests/test_maps.py                    # coords, ARIA, XSS, mobile overflow
   python3 tests/test_nbase.py                   # every base builds
   python3 tests/test_fetch_places.py            # OSM transform (offline fixture)
-  python3 scripts/osm_hours.py                  # Sunday-hours reader
+  python3 tests/test_regions.py                 # AT/IL/SA/JP/US/KR behaviour
+  python3 scripts/osm_hours.py                  # opening-hours reader
+  python3 scripts/regions.py                    # country profiles
   ```
 - Open both pages in a browser (`vercel:verification` or the `run` skill / a local
   `python3 -m http.server`). **Check the browser console** — the templates report
@@ -193,8 +205,11 @@ the URL.
 - `scripts/fetch_places.py` — OpenStreetMap → `maps-data.js`. Fetches POIs,
   parking, opening hours and family/accessibility tags with `source:"osm"`
   provenance and `review` flags for anything it cannot fill.
-- `scripts/osm_hours.py` — cautious reader for the OSM `opening_hours` grammar.
-  Returns `None` rather than guessing; see its docstring for why a regex is wrong.
+- `scripts/osm_hours.py` — cautious reader for the OSM `opening_hours` grammar,
+  for any weekday. Returns `None` rather than guessing; see its docstring for
+  why a regex is wrong.
+- `scripts/regions.py` — per-country closing days, units and usable nav apps.
+  This is where the Austria-only assumptions were quarantined.
 - `scripts/fetch_photos.py` — Wikimedia Commons downloader + `credits.json` writer.
   Rejects non-photos (SVG/PDF/drawings), byte-checks each download, supports
   `"must"` to anchor a search to the right place.

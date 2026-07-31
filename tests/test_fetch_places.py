@@ -15,6 +15,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
 import fetch_places as fp  # noqa: E402
+from regions import profile  # noqa: E402
+
+AT = profile("AT")   # Sunday-closing
+IL = profile("IL")   # Saturday-closing, short Friday
+JP = profile("JP")   # trades seven days
 
 # Real elements, trimmed to the tags that matter. Sourced from live queries.
 FIXTURE = [
@@ -58,7 +63,7 @@ def check(cond, msg):
         fails.append(msg)
 
 
-pois = [p for p in (fp.to_poi(e, "en") for e in FIXTURE) if p]
+pois = [p for p in (fp.to_poi(e, "en", AT) for e in FIXTURE) if p]
 notes.append(f"{len(FIXTURE)} raw elements -> {len(pois)} POIs")
 
 check(len(pois) == 8, f"expected 8 POIs after dropping 3 bad ones, got {len(pois)}")
@@ -83,17 +88,38 @@ for n, c in expect.items():
           f"{n}: expected category {c}, got {by_name.get(n,{}).get('category')}")
 notes.append("all 7 categories mapped correctly")
 
-# --- the Sunday trap --------------------------------------------------------
-check(by_name["Lidl"].get("sunday") == "closed",
-      f"'Su off' must be closed, got {by_name['Lidl'].get('sunday')}")
-check(by_name["Billa"].get("sunday") == "closed",
-      f"unmentioned Sunday must be closed, got {by_name['Billa'].get('sunday')}")
-notes.append("'Su off' correctly read as closed, not open")
+# --- the closing-day trap, under an Austrian profile -------------------------
+check(by_name["Lidl"].get("closed_days") == {"Su": "closed"},
+      f"'Su off' must be closed, got {by_name['Lidl'].get('closed_days')}")
+check(by_name["Billa"].get("closed_days") == {"Su": "closed"},
+      f"unmentioned Sunday must be closed, got {by_name['Billa'].get('closed_days')}")
+notes.append("AT profile: 'Su off' read as closed, not open")
+
+# --- the SAME data under other country profiles ------------------------------
+# This is the regression that matters once the skill leaves Austria: the badge
+# must follow the country's rest day, not a hardcoded Sunday.
+il_shop = fp.to_poi({"type": "node", "id": 20, "lat": 32.07, "lon": 34.77,
+                     "tags": {"name": "Shuk", "shop": "supermarket",
+                              "opening_hours": "Su-Th 08:00-21:00; Fr 08:00-14:00; Sa off"}},
+                    "en", IL)
+check(il_shop["closed_days"] == {"Sa": "closed", "Fr": "limited"},
+      f"IL profile should flag Sat closed / Fri short, got {il_shop.get('closed_days')}")
+check("Su" not in (il_shop.get("closed_days") or {}),
+      "IL profile must not report anything about Sunday — it is a working day there")
+jp_shop = fp.to_poi({"type": "node", "id": 21, "lat": 35.68, "lon": 139.70,
+                     "tags": {"name": "\u30de\u30eb\u30de\u30f3\u30b9\u30c8\u30a2",
+                              "shop": "supermarket", "opening_hours": "09:00-23:00"}},
+                    "en", JP)
+check("closed_days" not in jp_shop,
+      f"JP trades seven days; no closed_days expected, got {jp_shop.get('closed_days')}")
+check("closed_days" not in jp_shop.get("review", []),
+      "JP should not even flag closed_days for review")
+notes.append("IL profile: Sat closed + Fri short, Sunday untouched; JP: no badge at all")
 
 # --- unknowns are flagged, never guessed ------------------------------------
 lk = by_name["Liechtensteinklamm"]
 check("hours" in lk, "seasonal hours string should still be carried through")
-check("sunday" not in lk, "sunday must not be set for a non-supermarket")
+check("closed_days" not in lk, "closed_days must not be set for a non-supermarket")
 wf = by_name["Wenger Wasserfall"]
 check("hours" not in wf, "a POI with no OSM hours must not invent them")
 check("hours" in wf.get("review", []), "missing hours must be flagged for review")

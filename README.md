@@ -21,7 +21,7 @@
 |  |  |
 |---|---|
 | **`index.html`** | Hero with a live countdown, day-by-day itinerary per base, hotels & rental-car table, discount/city-card coverage, opening hours, a rainy-day alternatives bank, and a localStorage packing checklist. |
-| **`maps.html` + `maps-data.js`** | An interactive Leaflet map per base: filter by category, search, sort by distance from the hotel, with drive times, opening hours, pass badges, Sunday-supermarket badges and one-tap Waze / Google Maps navigation. |
+| **`maps.html` + `maps-data.js`** | An interactive Leaflet map per base: filter by category, search, sort by distance from the hotel, with drive times, opening hours, pass badges, parking, closing-day badges for the destination's rest day, and one-tap navigation in whichever app works there. |
 
 <br>
 
@@ -54,6 +54,7 @@ The value isn't the itinerary prose — any LLM writes "visit the old town." The
 
 - 📷 **Real photos, never invented URLs.** `scripts/fetch_photos.py` pulls verified images from Wikimedia Commons and writes an attribution `credits.json`. Anything it can't resolve becomes a gradient tile — never a fake `<img src>`.
 - 📍 **Verified coordinates, drive times and opening hours** — or an explicit "couldn't confirm."
+- 🌍 **Works outside Europe.** The closing-day badge follows the destination's actual rest day — Sunday in Austria, Saturday in Israel, Friday in the Gulf, none in Japan or the US. Units switch to miles where people use miles, and the nav buttons only offer apps that work in-country (no Waze in Japan; Naver in South Korea).
 - 🎟 **Discount-card coverage** cross-checked so the itinerary and the maps agree.
 - 💸 **A per-region deals & savings playbook** — attraction and restaurant coupons, guest/city cards, and region-active apps (Too Good To Go, TheFork).
 - 🚀 **Deploys** cleanly to Vercel as plain static files.
@@ -87,7 +88,8 @@ trip-planner/
 ├── SKILL.md                    # workflow + guardrails
 ├── scripts/
 │   ├── fetch_places.py         # OpenStreetMap -> maps-data.js (POIs, parking, hours)
-│   ├── osm_hours.py            # cautious OSM opening_hours reader
+│   ├── osm_hours.py            # cautious OSM opening_hours reader, any weekday
+│   ├── regions.py              # per-country closing days, units, usable nav apps
 │   └── fetch_photos.py         # Wikimedia Commons downloader + credits.json
 ├── references/
 │   ├── itinerary.html          # main page template (full design system + JS)
@@ -98,6 +100,7 @@ trip-planner/
     ├── test_maps.py            # headless render: coords, ARIA, XSS, mobile
     ├── test_nbase.py           # N-base builds + data/section mismatch errors
     ├── test_fetch_places.py    # OSM transform, against a real-response fixture
+    ├── test_regions.py         # AT / IL / SA / JP / US / KR rendering
     └── validate_data.py        # schema check on maps-data.js before deploy
 ```
 

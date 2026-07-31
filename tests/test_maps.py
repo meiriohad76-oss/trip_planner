@@ -20,7 +20,7 @@ window.MAPDATA = {
       { name:"Bad Lat", category:"nature", lat:999, lng:13.14, drive_min:3 },
       { name:"Missing Lng", category:"pool", lat:47.33, drive_min:4 },
       { name:"Evil <img src=x onerror=alert(1)> \\" Name", category:"restaurant", lat:47.326, lng:13.137, drive_min:2 },
-      { name:"NaN Drive", category:"supermarket", lat:47.327, lng:13.138, drive_min:"soon", sunday:"closed" }
+      { name:"NaN Drive", category:"supermarket", lat:47.327, lng:13.138, drive_min:"soon", closed_days:{Su:"closed"} }
     ],
   },
   base2: {

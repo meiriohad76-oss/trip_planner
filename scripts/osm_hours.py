@@ -78,12 +78,23 @@ def _minutes(rng):
     return b - a
 
 
-def sunday_state(spec, limited_below_minutes=300):
-    """Return "open" | "limited" | "closed" | None for Sundays.
+def day_state(spec, weekday, limited_below_minutes=300):
+    """Return "open" | "limited" | "closed" | None for one weekday.
 
-    "limited" means open, but for a notably short window (default: under 5h),
-    which is how most AT/DE Sunday trading actually looks.
+    `weekday` is 0=Monday … 6=Sunday, or a two-letter code ("Sa", "Fr").
+
+    Which day matters is NOT universal, which is why this is parameterised.
+    Austria and Germany close on Sunday; Israel closes Saturday (and Friday
+    afternoon); much of the Gulf closes Friday midday; Japan, the US and most
+    of Asia close nothing. Hardcoding Sunday produces a badge that is wrong or
+    meaningless outside Central Europe. See scripts/regions.py.
+
+    "limited" means open, but for a notably short window (default: under 5h).
     """
+    if isinstance(weekday, str):
+        weekday = DAY_IX.get(weekday.title())
+    if weekday is None or not (0 <= weekday <= 6):
+        return None
     if not spec or not isinstance(spec, str):
         return None
     s = spec.strip()
@@ -96,7 +107,38 @@ def sunday_state(spec, limited_below_minutes=300):
     if TOO_COMPLEX.search(s):
         return None
 
-    sunday_rule = None          # None = never mentioned
+    week = _week_minutes(s)
+    if week is None:
+        return None
+    day_rule = week[weekday]
+
+    if day_rule is None:
+        # The day never appears. In this grammar an unmentioned day is closed,
+        # but real-world data is sloppy enough that we only trust that when the
+        # spec actually enumerates days.
+        others = [d for i, d in enumerate(DAYS) if i != weekday]
+        return "closed" if re.search(r"\b(" + "|".join(others) + r")\b", s) else None
+    if day_rule == 0:
+        return "closed"
+
+    # "limited" is RELATIVE to the rest of the week, not an absolute cutoff.
+    # An absolute threshold does not travel: Israeli Friday trading of
+    # 08:00-14:00 is 6 h, which clears a 5 h bar, yet it is plainly a short day
+    # beside the 13 h Su-Th norm. Compare against the week's typical open day.
+    full = sorted(m for m in week if m)
+    if full:
+        typical = full[len(full) // 2]           # median open day
+        if day_rule < 0.7 * typical:
+            return "limited"
+    return "limited" if day_rule < limited_below_minutes else "open"
+
+
+def _week_minutes(s):
+    """Open minutes for each weekday, or None where the day is unmentioned.
+
+    Returns None entirely if any rule uses syntax this subset cannot model.
+    """
+    week = [None] * 7
     for rule in s.split(";"):
         rule = rule.strip()
         if not rule:
@@ -104,36 +146,34 @@ def sunday_state(spec, limited_below_minutes=300):
         m = re.match(r"^([A-Za-z]{2}(?:\s*[-,]\s*[A-Za-z]{2})*)\s+(.*)$", rule)
         if not m:
             # A bare time range with no day prefix means "every day".
-            if _minutes(rule) is not None:
-                sunday_rule = _minutes(rule)
+            mins = _minutes(rule)
+            if mins is not None:
+                week = [mins] * 7
                 continue
             if rule.lower() in ("off", "closed"):
-                return "closed"
+                return [0] * 7
             return None
         days, rest = _expand(m.group(1)), m.group(2).strip()
         if days is None:
             return None
-        if 6 not in days:                       # rule does not touch Sunday
-            continue
         if rest.lower() in ("off", "closed"):
-            sunday_rule = 0
+            for d in days:
+                week[d] = 0
             continue
         total = 0
         for chunk in rest.split(","):
             mins = _minutes(chunk)
             if mins is None:
-                return None                     # unmodelled syntax on a Sunday rule
+                return None
             total += mins
-        sunday_rule = total
+        for d in days:
+            week[d] = total
+    return week
 
-    if sunday_rule is None:
-        # Sunday never appears. In this grammar an unmentioned day is closed,
-        # but real-world data is sloppy enough that we only trust that when the
-        # spec actually enumerates days.
-        return "closed" if re.search(r"\b(Mo|Tu|We|Th|Fr|Sa)\b", s) else None
-    if sunday_rule == 0:
-        return "closed"
-    return "limited" if sunday_rule < limited_below_minutes else "open"
+
+def sunday_state(spec, limited_below_minutes=300):
+    """Back-compat shim. Prefer day_state() with the destination's rest day."""
+    return day_state(spec, 6, limited_below_minutes)
 
 
 # --- self-test: real strings pulled from live Overpass responses --------------
@@ -155,12 +195,42 @@ CASES = [
     (None, None),
 ]
 
+# Non-Sunday cases — the whole point of parameterising the day.
+DAY_CASES = [
+    # Israel: closed Saturday (Shabbat), Friday short, Sunday a normal workday.
+    ("Su-Th 08:00-21:00; Fr 08:00-14:00; Sa off", "Sa", "closed"),
+    ("Su-Th 08:00-21:00; Fr 08:00-14:00; Sa off", "Fr", "limited"),
+    ("Su-Th 08:00-21:00; Fr 08:00-14:00; Sa off", "Su", "open"),
+    # Gulf: Friday opens only after midday prayers. 8 h against a 13 h norm —
+    # "limited" is the useful answer, because a family arriving at 10:00 finds
+    # the doors shut.
+    ("Sa-Th 09:00-22:00; Fr 14:00-22:00", "Fr", "limited"),
+    ("Sa-Th 09:00-22:00; Fr off", "Fr", "closed"),
+    # Japan / US: open every day — the badge should say nothing useful.
+    ("09:00-23:00", "Su", "open"),
+    ("09:00-23:00", "Sa", "open"),
+    ("Mo-Su 10:00-20:00", "We", "open"),
+    # Weekday closures happen everywhere (museums shut Mondays).
+    ("Tu-Su 10:00-18:00", "Mo", "closed"),
+    ("Tu-Su 10:00-18:00", "Tu", "open"),
+    # Bad input
+    ("Mo-Fr 09:00-17:00", "Xx", None),
+]
+
 if __name__ == "__main__":
     bad = 0
+    print("Sunday cases (back-compat shim):")
     for spec, want in CASES:
         got = sunday_state(spec)
         ok = got == want
         bad += not ok
         print(f"{'✓' if ok else '✗'} {str(spec)[:44]:46s} -> {str(got):8s} (want {want})")
-    print(f"\n{len(CASES)-bad}/{len(CASES)} passed")
+    print("\nArbitrary-weekday cases:")
+    for spec, day, want in DAY_CASES:
+        got = day_state(spec, day)
+        ok = got == want
+        bad += not ok
+        print(f"{'✓' if ok else '✗'} [{day}] {str(spec)[:40]:42s} -> {str(got):8s} (want {want})")
+    total = len(CASES) + len(DAY_CASES)
+    print(f"\n{total-bad}/{total} passed")
     raise SystemExit(1 if bad else 0)

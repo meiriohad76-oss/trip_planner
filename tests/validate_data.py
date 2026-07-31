@@ -5,8 +5,8 @@ validate_data.py — check maps-data.js before it ships.
     python3 tests/validate_data.py path/to/maps-data.js
 
 Catches the mistakes that otherwise surface as a blank map on a phone in a car
-park: a missing coordinate, a category the template does not know, a `sunday`
-value outside the enum, two POIs at the same spot, an unresolved `review` flag.
+park: a missing coordinate, a category the template does not know, a
+`closed_days` value outside the enum, two POIs at the same spot, an unresolved `review` flag.
 
 Exit codes:
     0  clean, or advisory warnings only
@@ -20,7 +20,8 @@ from pathlib import Path
 CATEGORIES = {"attraction", "nature", "park", "pool", "animal", "museum",
               "castle", "scenic", "shopping", "restaurant", "supermarket",
               "parking"}
-SUNDAY = {"open", "limited", "closed"}
+DAY_STATE = {"open", "limited", "closed"}
+DAYS = {"Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"}
 
 
 def load(path):
@@ -87,10 +88,22 @@ def main():
                 if abs(lat - hotel["lat"]) > 3 or abs(lng - hotel["lng"]) > 3:
                     warns.append(f"{at}: >3° from its base — swapped lat/lng?")
 
-            if p.get("sunday") is not None and p["sunday"] not in SUNDAY:
-                errors.append(f"{at}: sunday={p['sunday']!r}, expected one of {sorted(SUNDAY)}")
-            if cat == "supermarket" and "sunday" not in p and "sunday" not in (p.get("review") or []):
-                warns.append(f"{at}: supermarket with no Sunday state and no review flag")
+            cd = p.get("closed_days")
+            if cd is not None:
+                if not isinstance(cd, dict):
+                    errors.append(f"{at}: closed_days must be an object like "
+                                  f'{{"Sa": "closed"}}, got {cd!r}')
+                else:
+                    for day, st in cd.items():
+                        if day not in DAYS:
+                            errors.append(f"{at}: closed_days key {day!r} is not a "
+                                          f"weekday code {sorted(DAYS)}")
+                        if st not in DAY_STATE:
+                            errors.append(f"{at}: closed_days[{day!r}]={st!r}, "
+                                          f"expected one of {sorted(DAY_STATE)}")
+            if cat == "supermarket" and cd is None and "closed_days" not in (p.get("review") or []):
+                warns.append(f"{at}: supermarket with no closed_days and no review flag "
+                             f"(fine if this country trades seven days)")
 
             dm = p.get("drive_min")
             if dm is not None and not isinstance(dm, (int, float)):
@@ -119,7 +132,7 @@ def main():
         for k, v in sorted(review.items(), key=lambda x: -x[1]):
             print(f"  · {k:14s} {v} POIs")
         print("\nResolve these, remove them from each POI's `review` array, then "
-              "re-run. Do not ship with `hours` or `sunday` outstanding.")
+              "re-run. Do not ship with `hours` or `closed_days` outstanding.")
 
     if errors:
         print(f"\n{len(errors)} error(s) — do not deploy.")
