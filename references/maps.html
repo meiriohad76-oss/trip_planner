@@ -239,6 +239,17 @@
                                   : {n:Math.round(v*10)/10,u:'km'};
   }
   function dist(v){var d=km(v);return d?('~'+d.n+' '+d.u):'—';}
+  /* Straight-line is a fallback. When fetch_routes.py has filled drive_km we
+     show the real road distance instead, and drop the "~". */
+  function distOf(p){
+    if(isFinite(p.drive_km)){var d=km(Number(p.drive_km));return d?(d.n+' '+d.u+' by road'):'—';}
+    return dist(p._km);
+  }
+  /* A routed time can be real yet measure the wrong thing: if the coordinate is
+     far from any road, OSRM routes to that road instead. Say so. */
+  function driveNote(p){
+    return p.drive_note?'<span class="badge limited">⚠ '+esc(p.drive_note)+'</span>':'';
+  }
 
   /* ============ PER-DATE OPEN/CLOSED (precomputed, no runtime library) =======
      window.TRIPDAYS is written by scripts/build_days.py, which runs the real
@@ -322,8 +333,8 @@
       ? '<a class="navbtn gmap" target="_blank" rel="noopener" href="'+esc(p.website)+'" aria-label="Official site and tickets for '+esc(p.name)+'">🎫 Tickets / official site</a>'
       : '';
   }
-  function badges(p){var b=dayBadge(p)+closedBadge(p);if(p.pass)b+='<span class="badge card">🎟️ Pass · free</span>';b+=parkingBadges(p);if(p.hours)b+='<span class="badge">🕘 '+esc(p.hours)+(p.hours_note?' · '+esc(p.hours_note):'')+'</span>';return b;}
-  function popupHtml(p){var c=CATS[p.category]||{label:''};return '<div class="pop"><h4>'+esc(p.name)+'</h4><div class="pcat">'+(c.emoji||'')+' '+esc(c.label)+' · '+num(p.drive_min,' min drive')+' · '+dist(p._km)+'</div>'+(p.desc?'<p>'+esc(p.desc)+'</p>':'')+(p.hours?'<div class="prow"><b>🕘 </b>'+esc(p.hours)+'</div>':'')+(p.pass?'<div class="prow"><b>🎟️ Pass:</b> free entry</div>':'')+'<div class="plinks">'+navLinks(p)+'</div></div>';}
+  function badges(p){var b=dayBadge(p)+driveNote(p)+closedBadge(p);if(p.pass)b+='<span class="badge card">🎟️ Pass · free</span>';b+=parkingBadges(p);if(p.hours)b+='<span class="badge">🕘 '+esc(p.hours)+(p.hours_note?' · '+esc(p.hours_note):'')+'</span>';return b;}
+  function popupHtml(p){var c=CATS[p.category]||{label:''};return '<div class="pop"><h4>'+esc(p.name)+'</h4><div class="pcat">'+(c.emoji||'')+' '+esc(c.label)+' · '+num(p.drive_min,' min drive')+' · '+distOf(p)+'</div>'+(p.desc?'<p>'+esc(p.desc)+'</p>':'')+(p.hours?'<div class="prow"><b>🕘 </b>'+esc(p.hours)+'</div>':'')+(p.pass?'<div class="prow"><b>🎟️ Pass:</b> free entry</div>':'')+'<div class="plinks">'+navLinks(p)+'</div></div>';}
 
   function build(cfg){
     var hotel=cfg.hotel, pois=cfg.pois||[];
@@ -399,7 +410,7 @@
 
     function render(){var vis=visible();Object.keys(markers).forEach(function(id){var on=vis.some(function(p){return p._id==id;});if(on){if(!map.hasLayer(markers[id]))markers[id].addTo(map);}else if(map.hasLayer(markers[id]))map.removeLayer(markers[id]);});
       countEl.textContent=vis.length+' of '+pois.length+' places';
-      listBox.innerHTML=vis.map(function(p){var c=CATS[p.category]||{};return '<div class="lc" role="listitem" tabindex="0" data-id="'+p._id+'" style="--cc:'+(c.color||'#0f766e')+'"><h4><span aria-hidden="true">'+(c.emoji||'')+'</span> '+esc(p.name)+'</h4><div class="cat">'+esc(c.label||'')+' · '+num(p.drive_min,' min')+' · '+dist(p._km)+'</div>'+(p.desc?'<p>'+esc(p.desc)+'</p>':'')+'<div class="badges">'+badges(p)+'</div><div class="navs">'+navLinks(p)+ticketLink(p)+'</div></div>';}).join('');
+      listBox.innerHTML=vis.map(function(p){var c=CATS[p.category]||{};return '<div class="lc" role="listitem" tabindex="0" data-id="'+p._id+'" style="--cc:'+(c.color||'#0f766e')+'"><h4><span aria-hidden="true">'+(c.emoji||'')+'</span> '+esc(p.name)+'</h4><div class="cat">'+esc(c.label||'')+' · '+num(p.drive_min,' min')+' · '+distOf(p)+'</div>'+(p.desc?'<p>'+esc(p.desc)+'</p>':'')+'<div class="badges">'+badges(p)+'</div><div class="navs">'+navLinks(p)+ticketLink(p)+'</div></div>';}).join('');
       listBox.querySelectorAll('.lc').forEach(function(el){
         function open(e){if(e.target.closest('a'))return;setActive(+el.dataset.id,true);}
         el.addEventListener('click',open);

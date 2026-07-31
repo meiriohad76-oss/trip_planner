@@ -452,13 +452,22 @@ def render(bases, lang, prof=None, country=""):
         for p in b["pois"]:
             bits = [f'name:{js_value(p["name"])}', f'category:{js_value(p["category"])}',
                     f'lat:{p["lat"]}', f'lng:{p["lng"]}']
-            for k in ("hours", "closed_days", "website", "phone", "cuisine", "parking"):
+            # Order matters only for readability. drive_* are written by
+            # fetch_routes.py; hours_note carries prose that the
+            # opening_hours grammar cannot express.
+            for k in ("hours", "hours_note", "closed_days", "drive_min", "drive_km",
+                      "drive_src", "drive_note", "pass", "website", "phone",
+                      "cuisine", "parking"):
                 if k in p:
                     bits.append(f'{k}:{js_value(p[k])}')
             if "family" in p:
                 bits.append(f'family:{js_value(p["family"])}')
-            bits.append(f'source:{js_value(p["source"])}')
-            bits.append(f'osm:{js_value(p["osm"])}')
+            # Optional: a hand-authored POI has no OSM provenance, and
+            # inventing one would be worse than omitting it.
+            if p.get("source"):
+                bits.append(f'source:{js_value(p["source"])}')
+            if p.get("osm"):
+                bits.append(f'osm:{js_value(p["osm"])}')
             if p.get("review"):
                 bits.append(f'review:{js_value(p["review"])}')
             L.append("      { " + ", ".join(bits) + " },")

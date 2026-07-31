@@ -73,6 +73,24 @@ items. `validate_data.py` lists what is outstanding; **do not deploy while
 
 Credit OpenStreetMap (ODbL) in the footer — it is a licence condition.
 
+### 0a. Fill the drive times from a real router
+```
+python3 scripts/fetch_routes.py maps-data.js
+```
+One OSRM *table* call per base fills `drive_min` and `drive_km` for every POI
+and clears the `drive_min` review flag. This is the last field on the site that
+would otherwise be a guess.
+
+Watch for the snap warning. A router cannot drive to a coordinate — it snaps to
+the nearest road first. Tens of metres is normal; hundreds mean the point is a
+summit, an island or a pedestrian zone, and the duration measures the drive to
+some *other* place. Those POIs keep the number, gain a `drive_note`, and STAY
+flagged for review. In a sample run a mountain POI came back as 69 min for
+10.1 km because its nearest road was 3.6 km away.
+
+Times are free-flow: no traffic, no time of day. Keep the "verify close to
+travel" note. Credit OSRM/OpenStreetMap (ODbL).
+
 ### 0b. Precompute "is it open on the day we go?"
 After the hours are filled in and verified:
 
@@ -106,7 +124,8 @@ Spawn a subagent per base/region. Demand from each, as structured data:
 - **Family fit**: age suitability, indoor/outdoor, how long it takes.
 - **Verified opening hours + season** (these are wrong online constantly — prefer
   official sites), and whether a **discount card** covers it.
-- **Drive time from the hotel** (a router, not a guess).
+- **Drive time from the hotel** — `scripts/fetch_routes.py` does this; the
+  subagent only needs to sanity-check the flagged ones.
 - **Restaurants** (family-friendly, near each base) and **supermarkets** with
   hours for the destination's **closing day** — Austria and Germany rest on
   Sunday, Israel on Saturday (and Friday afternoon), much of the Gulf on Friday,
@@ -200,6 +219,7 @@ Data hygiene that makes or breaks it:
   python3 tests/test_fetch_places.py            # OSM transform (offline fixture)
   python3 tests/test_regions.py                 # AT/IL/SA/JP/US/KR behaviour
   python3 tests/test_days.py                    # per-date open/closed + holidays
+  python3 tests/test_routes.py                  # drive-time merge + OSRM contract
   python3 scripts/osm_hours.py                  # opening-hours reader
   python3 scripts/regions.py                    # country profiles
   ```
@@ -240,6 +260,8 @@ the URL.
   This is where the Austria-only assumptions were quarantined.
 - `scripts/build_days.py` + `scripts/day_status.js` — precompute per-date
   open/closed with the full `opening_hours` grammar, plus public holidays.
+- `scripts/fetch_routes.py` — real drive times from OSRM, with a warning when a
+  coordinate is too far from a road for the number to mean what it looks like.
 - `scripts/fetch_photos.py` — Wikimedia Commons downloader + `credits.json` writer.
   Rejects non-photos (SVG/PDF/drawings), byte-checks each download, supports
   `"must"` to anchor a search to the right place.

@@ -186,7 +186,7 @@ machine with a fresh quota before trusting the output.
 
 1. ~~`fetch_places.py` (Overpass) + `validate_data.py`~~ — **done**, needs a live run
 2. ~~`opening_hours.js` + holidays~~ — **done**, precomputed at build time
-3. OSRM drive times — removes the last guessed number
+3. ~~OSRM drive times~~ — **done**; snap-distance warning added
 4. Weather-driven rainy-day bank
 5. Geosearch in the photo pipeline
 6. PWA/offline
