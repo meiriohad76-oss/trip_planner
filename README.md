@@ -54,6 +54,7 @@ The value isn't the itinerary prose — any LLM writes "visit the old town." The
 
 - 📷 **Real photos, never invented URLs.** `scripts/fetch_photos.py` pulls verified images from Wikimedia Commons and writes an attribution `credits.json`. Anything it can't resolve becomes a gradient tile — never a fake `<img src>`.
 - 📍 **Verified coordinates, drive times and opening hours** — or an explicit "couldn't confirm."
+- 📅 **"Is it open on the day we're going?"** Seasonal ranges, weekday rules and public holidays are evaluated per trip date at build time, so the map answers the actual question instead of showing a string to decode. Costs the page nothing — the table is a few KB and needs no runtime library.
 - 🌍 **Works outside Europe.** The closing-day badge follows the destination's actual rest day — Sunday in Austria, Saturday in Israel, Friday in the Gulf, none in Japan or the US. Units switch to miles where people use miles, and the nav buttons only offer apps that work in-country (no Waze in Japan; Naver in South Korea).
 - 🎟 **Discount-card coverage** cross-checked so the itinerary and the maps agree.
 - 💸 **A per-region deals & savings playbook** — attraction and restaurant coupons, guest/city cards, and region-active apps (Too Good To Go, TheFork).
@@ -90,6 +91,8 @@ trip-planner/
 │   ├── fetch_places.py         # OpenStreetMap -> maps-data.js (POIs, parking, hours)
 │   ├── osm_hours.py            # cautious OSM opening_hours reader, any weekday
 │   ├── regions.py              # per-country closing days, units, usable nav apps
+│   ├── build_days.py           # precompute per-date open/closed + holidays
+│   ├── day_status.js           # opening_hours evaluation (build time, Node)
 │   └── fetch_photos.py         # Wikimedia Commons downloader + credits.json
 ├── references/
 │   ├── itinerary.html          # main page template (full design system + JS)
@@ -101,6 +104,7 @@ trip-planner/
     ├── test_nbase.py           # N-base builds + data/section mismatch errors
     ├── test_fetch_places.py    # OSM transform, against a real-response fixture
     ├── test_regions.py         # AT / IL / SA / JP / US / KR rendering
+    ├── test_days.py            # per-date open/closed, seasons, holidays
     └── validate_data.py        # schema check on maps-data.js before deploy
 ```
 

@@ -72,6 +72,32 @@ items. `validate_data.py` lists what is outstanding; **do not deploy while
 
 Credit OpenStreetMap (ODbL) in the footer — it is a licence condition.
 
+### 0b. Precompute "is it open on the day we go?"
+After the hours are filled in and verified:
+
+```
+npm install opening_hours@3.8.0        # build-time only, never shipped
+python3 scripts/build_days.py maps-data.js 2026-08-05 2026-08-19
+```
+
+This evaluates every POI against every trip date using the real OSM
+`opening_hours` grammar — seasonal ranges, weekday rules, public holidays — and
+writes a few-KB `window.TRIPDAYS` table into `maps-data.js`. The map then shows
+a day picker and per-day open/closed badges **with no extra JavaScript**;
+doing it in the browser would cost ~291 KB across three CDN scripts on a page
+whose whole point is working offline.
+
+**`hours` must be OSM syntax** (`Mo-Fr 09:00-17:00; Su off`,
+`May 1-Oct 31: 09:00-16:30`) for this to work. Prose like "Daily 9-6 ish" cannot
+be parsed; the POI is reported and simply drops out of the day view. Put prose
+in `hours_note` instead.
+
+Two holiday gaps are surfaced, never hidden:
+- `opening_hours.js` has no `PH` data for many countries (Austria works; Israel
+  and Japan throw). Those dates are marked "holidays not checked".
+- Nager.Date has no data for Israel, Thailand, the UAE or India. The script says
+  so and asks you to research those holidays by hand.
+
 ### 1. Research the destinations — in parallel, per base
 Spawn a subagent per base/region. Demand from each, as structured data:
 - **Attractions with real `lat,lon`** — cable cars, parks, lakes, castles,
@@ -172,6 +198,7 @@ Data hygiene that makes or breaks it:
   python3 tests/test_nbase.py                   # every base builds
   python3 tests/test_fetch_places.py            # OSM transform (offline fixture)
   python3 tests/test_regions.py                 # AT/IL/SA/JP/US/KR behaviour
+  python3 tests/test_days.py                    # per-date open/closed + holidays
   python3 scripts/osm_hours.py                  # opening-hours reader
   python3 scripts/regions.py                    # country profiles
   ```
@@ -210,6 +237,8 @@ the URL.
   why a regex is wrong.
 - `scripts/regions.py` — per-country closing days, units and usable nav apps.
   This is where the Austria-only assumptions were quarantined.
+- `scripts/build_days.py` + `scripts/day_status.js` — precompute per-date
+  open/closed with the full `opening_hours` grammar, plus public holidays.
 - `scripts/fetch_photos.py` — Wikimedia Commons downloader + `credits.json` writer.
   Rejects non-photos (SVG/PDF/drawings), byte-checks each download, supports
   `"must"` to anchor a search to the right place.

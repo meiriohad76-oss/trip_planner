@@ -1,0 +1,8 @@
+{
+  "name": "trip-planner-build",
+  "private": true,
+  "description": "Build-time dependencies only. Nothing here is shipped to the generated site — see scripts/day_status.js for why the opening_hours evaluation runs here instead of in the browser.",
+  "devDependencies": {
+    "opening_hours": "3.8.0"
+  }
+}

@@ -185,7 +185,7 @@ machine with a fresh quota before trusting the output.
 ## Suggested order
 
 1. ~~`fetch_places.py` (Overpass) + `validate_data.py`~~ — **done**, needs a live run
-2. `opening_hours.js` + holidays — the correctness bug and the per-day badge
+2. ~~`opening_hours.js` + holidays~~ — **done**, precomputed at build time
 3. OSRM drive times — removes the last guessed number
 4. Weather-driven rainy-day bank
 5. Geosearch in the photo pipeline
