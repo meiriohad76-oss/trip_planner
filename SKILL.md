@@ -40,8 +40,9 @@ A two-page site, both self-contained, sharing one design system:
   localStorage packing checklist; footer with photo credits.
 - **`maps.html`** + **`maps-data.js`** — an interactive Leaflet map per base:
   filter by category, search, sort by distance from the hotel, popups and list
-  cards with drive time, opening hours, pass badge, supermarket Sunday badge, and
-  Waze + Google Maps navigation buttons.
+  cards with drive time, opening hours, a per-date open/closed badge, pass badge,
+  parking, the destination's closing-day badge, and navigation in whichever app
+  works in that country.
 - **`img/`** — real Wikimedia photos + `credits.json` (attribution is required).
 
 ## Workflow
@@ -68,7 +69,7 @@ Every POI carries `source:"osm"` and an `osm` id you can open at
 `openstreetmap.org/<id>`, plus a `review` array naming the fields still missing.
 Feed that file to the step-1 subagents and tell them to resolve the `review`
 items. `validate_data.py` lists what is outstanding; **do not deploy while
-`hours` or `sunday` are unresolved**.
+`hours` or `closed_days` are unresolved**.
 
 Credit OpenStreetMap (ODbL) in the footer — it is a licence condition.
 
