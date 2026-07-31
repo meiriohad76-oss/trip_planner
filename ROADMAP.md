@@ -153,9 +153,38 @@ better fit than most of what is on the map today.
 
 ---
 
+## Status
+
+**Step 1 is built** (`scripts/fetch_places.py`, `scripts/osm_hours.py`,
+`tests/validate_data.py`, `tests/test_fetch_places.py`), plus parking and
+official-site ticket links on the map.
+
+Three things learned while building it, all now encoded in the code:
+
+- **Some public Overpass mirrors serve a regional extract** and answer an
+  out-of-area query with an empty result and HTTP 200 — no error.
+  `overpass.osm.ch` returned 0 restaurants for an Austrian village in 0.5 s
+  while `overpass-api.de` returned 26 for the identical query. Used as a
+  fallback it silently produces a half-empty site. Only planet-wide instances
+  are in the mirror list, and a mostly-empty run now warns.
+- **Overpass gives each IP ~2 concurrent slots.** Once used, requests queue
+  server-side and then trip the client timeout, which looks exactly like the
+  server being down and tempts you into retrying harder. The script now reads
+  `/api/status` and waits for a slot.
+- **Query shape dominates cost.** `way["natural"="water"]["name"]` at 14 km
+  pulls whole lake geometries and pushed a run past 200 s. Node-first, exact
+  matches, no relations, small chunks, disk cache.
+
+⚠ **Not yet verified end to end against live Overpass.** The transform logic is
+covered by an offline fixture of real Overpass elements
+(`tests/test_fetch_places.py`), and the individual API calls were verified
+earlier in isolation, but a full multi-base run was not completed — the public
+instance degraded and then rate-limited during development. Run it from a
+machine with a fresh quota before trusting the output.
+
 ## Suggested order
 
-1. `fetch_places.py` (Overpass) + `validate_data.py` — biggest verification win
+1. ~~`fetch_places.py` (Overpass) + `validate_data.py`~~ — **done**, needs a live run
 2. `opening_hours.js` + holidays — the correctness bug and the per-day badge
 3. OSRM drive times — removes the last guessed number
 4. Weather-driven rainy-day bank

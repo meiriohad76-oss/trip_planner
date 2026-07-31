@@ -168,7 +168,8 @@
     scenic:      {emoji:'🛣️', color:'#5b7083', label:'Scenic'},
     shopping:    {emoji:'🛍️', color:'#0d9488', label:'Shopping'},
     restaurant:  {emoji:'🍽️', color:'#b4413a', label:'Restaurants'},
-    supermarket: {emoji:'🛒', color:'#0891b2', label:'Supermarkets'}
+    supermarket: {emoji:'🛒', color:'#0891b2', label:'Supermarkets'},
+    parking:     {emoji:'🅿️', color:'#64748b', label:'Parking'}
   };
   var ORDER = Object.keys(CATS);
   var SVG_WAZE = '<svg viewBox="0 0 24 24"><path d="M21.4 2.6a1 1 0 0 0-1.1-.2L3.3 9.9c-1 .4-.9 1.9.1 2.2l6.7 2.1 2.1 6.7c.3 1 1.8 1.1 2.2.1l7.7-17a1 1 0 0 0-.7-1.4z"/></svg>';
@@ -196,7 +197,29 @@
     return '<a class="navbtn waze" target="_blank" rel="noopener" href="'+w+'" aria-label="Navigate to '+esc(p.name)+' with Waze">'+SVG_WAZE+'Waze</a><a class="navbtn gmap" target="_blank" rel="noopener" href="'+g+'" aria-label="Navigate to '+esc(p.name)+' with Google Maps">'+SVG_PIN+'Maps</a>';
   }
   function sundayBadge(p){if(p.category!=='supermarket')return '';var s=p.sunday||'closed';if(s==='open')return '<span class="badge open">✓ Open Sundays</span>';if(s==='limited')return '<span class="badge limited">◐ Sun — limited</span>';return '<span class="badge closed">✕ Closed Sundays</span>';}
-  function badges(p){var b=sundayBadge(p);if(p.pass)b+='<span class="badge card">🎟️ Pass · free</span>';if(p.hours)b+='<span class="badge">🕘 '+esc(p.hours)+'</span>';return b;}
+  /* Parking facts come from OSM (fee / capacity / type). Live occupancy is NOT
+     available from any free source, so the map never claims spaces are free —
+     it shows size and price, which is what you can actually plan around. */
+  function parkingBadges(p){
+    var k=p.parking; if(!k)return '';
+    var b='';
+    if(k.fee===true)b+='<span class="badge closed">💶 Paid</span>';
+    else if(k.fee===false)b+='<span class="badge open">✓ Free</span>';
+    if(k.capacity)b+='<span class="badge">🅿️ '+esc(k.capacity)+' spaces</span>';
+    if(k.type)b+='<span class="badge">'+esc(k.type)+'</span>';
+    if(k.maxstay)b+='<span class="badge limited">⏱ max '+esc(k.maxstay)+'</span>';
+    return b;
+  }
+  /* The official site is the only link we ever emit for tickets — a fabricated
+     deep link sends a family to a dead page with their card out. */
+  function ticketLink(p){
+    if(!p.website)return '';
+    var paid={attraction:1,museum:1,castle:1,animal:1,pool:1,park:1};
+    return paid[p.category]
+      ? '<a class="navbtn gmap" target="_blank" rel="noopener" href="'+esc(p.website)+'" aria-label="Official site and tickets for '+esc(p.name)+'">🎫 Tickets / official site</a>'
+      : '';
+  }
+  function badges(p){var b=sundayBadge(p);if(p.pass)b+='<span class="badge card">🎟️ Pass · free</span>';b+=parkingBadges(p);if(p.hours)b+='<span class="badge">🕘 '+esc(p.hours)+'</span>';return b;}
   function popupHtml(p){var c=CATS[p.category]||{label:''};return '<div class="pop"><h4>'+esc(p.name)+'</h4><div class="pcat">'+(c.emoji||'')+' '+esc(c.label)+' · '+num(p.drive_min,' min drive')+' · ~'+num(p._km,' km')+'</div>'+(p.desc?'<p>'+esc(p.desc)+'</p>':'')+(p.hours?'<div class="prow"><b>🕘 </b>'+esc(p.hours)+'</div>':'')+(p.pass?'<div class="prow"><b>🎟️ Pass:</b> free entry</div>':'')+'<div class="plinks">'+navLinks(p)+'</div></div>';}
 
   function build(cfg){
@@ -249,7 +272,7 @@
 
     function render(){var vis=visible();Object.keys(markers).forEach(function(id){var on=vis.some(function(p){return p._id==id;});if(on){if(!map.hasLayer(markers[id]))markers[id].addTo(map);}else if(map.hasLayer(markers[id]))map.removeLayer(markers[id]);});
       countEl.textContent=vis.length+' of '+pois.length+' places';
-      listBox.innerHTML=vis.map(function(p){var c=CATS[p.category]||{};return '<div class="lc" role="listitem" tabindex="0" data-id="'+p._id+'" style="--cc:'+(c.color||'#0f766e')+'"><h4><span aria-hidden="true">'+(c.emoji||'')+'</span> '+esc(p.name)+'</h4><div class="cat">'+esc(c.label||'')+' · '+num(p.drive_min,' min')+' · ~'+num(p._km,' km')+'</div>'+(p.desc?'<p>'+esc(p.desc)+'</p>':'')+'<div class="badges">'+badges(p)+'</div><div class="navs">'+navLinks(p)+'</div></div>';}).join('');
+      listBox.innerHTML=vis.map(function(p){var c=CATS[p.category]||{};return '<div class="lc" role="listitem" tabindex="0" data-id="'+p._id+'" style="--cc:'+(c.color||'#0f766e')+'"><h4><span aria-hidden="true">'+(c.emoji||'')+'</span> '+esc(p.name)+'</h4><div class="cat">'+esc(c.label||'')+' · '+num(p.drive_min,' min')+' · ~'+num(p._km,' km')+'</div>'+(p.desc?'<p>'+esc(p.desc)+'</p>':'')+'<div class="badges">'+badges(p)+'</div><div class="navs">'+navLinks(p)+ticketLink(p)+'</div></div>';}).join('');
       listBox.querySelectorAll('.lc').forEach(function(el){
         function open(e){if(e.target.closest('a'))return;setActive(+el.dataset.id,true);}
         el.addEventListener('click',open);

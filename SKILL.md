@@ -46,6 +46,27 @@ A two-page site, both self-contained, sharing one design system:
 
 ## Workflow
 
+### 0. Pull the map data from OpenStreetMap first
+Before any research subagent runs, fetch what OSM already knows:
+
+```
+python3 scripts/fetch_places.py bases.json maps-data.js
+python3 tests/validate_data.py maps-data.js
+```
+
+This does **not** replace step 1 — on a live sample only about half of OSM POIs
+carried `opening_hours`, and OSM can be years stale. It changes the subagent's
+job from "find and transcribe 30 places" (where invented coordinates come from)
+to "confirm these 30 and fill the gaps".
+
+Every POI carries `source:"osm"` and an `osm` id you can open at
+`openstreetmap.org/<id>`, plus a `review` array naming the fields still missing.
+Feed that file to the step-1 subagents and tell them to resolve the `review`
+items. `validate_data.py` lists what is outstanding; **do not deploy while
+`hours` or `sunday` are unresolved**.
+
+Credit OpenStreetMap (ODbL) in the footer — it is a licence condition.
+
 ### 1. Research the destinations — in parallel, per base
 Spawn a subagent per base/region. Demand from each, as structured data:
 - **Attractions with real `lat,lon`** — cable cars, parks, lakes, castles,
@@ -133,11 +154,14 @@ Data hygiene that makes or breaks it:
   `.banner.grad`. Never stretch one photo across unrelated days.
 
 ### 5. Verify before shipping
-- Run the template test suite first — it catches the structural mistakes before
-  you look at content:
+- Run the test suite first — it catches structural mistakes before you look at
+  content:
   ```
-  python3 tests/test_maps.py     # coords, ARIA, XSS, mobile overflow
-  python3 tests/test_nbase.py    # every base builds; mismatches are reported
+  python3 tests/validate_data.py maps-data.js   # schema + outstanding review items
+  python3 tests/test_maps.py                    # coords, ARIA, XSS, mobile overflow
+  python3 tests/test_nbase.py                   # every base builds
+  python3 tests/test_fetch_places.py            # OSM transform (offline fixture)
+  python3 scripts/osm_hours.py                  # Sunday-hours reader
   ```
 - Open both pages in a browser (`vercel:verification` or the `run` skill / a local
   `python3 -m http.server`). **Check the browser console** — the templates report
@@ -166,6 +190,11 @@ the URL.
   on the hours table (the template has one).
 
 ## Files
+- `scripts/fetch_places.py` — OpenStreetMap → `maps-data.js`. Fetches POIs,
+  parking, opening hours and family/accessibility tags with `source:"osm"`
+  provenance and `review` flags for anything it cannot fill.
+- `scripts/osm_hours.py` — cautious reader for the OSM `opening_hours` grammar.
+  Returns `None` rather than guessing; see its docstring for why a regex is wrong.
 - `scripts/fetch_photos.py` — Wikimedia Commons downloader + `credits.json` writer.
   Rejects non-photos (SVG/PDF/drawings), byte-checks each download, supports
   `"must"` to anchor a search to the right place.

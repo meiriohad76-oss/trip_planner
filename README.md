@@ -86,6 +86,8 @@ Then ask Claude Code to build a trip site, or run `/trip-planner`.
 trip-planner/
 ├── SKILL.md                    # workflow + guardrails
 ├── scripts/
+│   ├── fetch_places.py         # OpenStreetMap -> maps-data.js (POIs, parking, hours)
+│   ├── osm_hours.py            # cautious OSM opening_hours reader
 │   └── fetch_photos.py         # Wikimedia Commons downloader + credits.json
 ├── references/
 │   ├── itinerary.html          # main page template (full design system + JS)
@@ -94,7 +96,9 @@ trip-planner/
 │   └── coupon-research.md      # per-region deals & savings playbook
 └── tests/
     ├── test_maps.py            # headless render: coords, ARIA, XSS, mobile
-    └── test_nbase.py           # N-base builds + data/section mismatch errors
+    ├── test_nbase.py           # N-base builds + data/section mismatch errors
+    ├── test_fetch_places.py    # OSM transform, against a real-response fixture
+    └── validate_data.py        # schema check on maps-data.js before deploy
 ```
 
 ## Tests
