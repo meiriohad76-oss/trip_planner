@@ -1,9 +1,9 @@
 ---
-name: vacation-site-builder
-description: Build a complete, deployable family vacation website — a hero with a live countdown, a day-by-day itinerary per base, hotels & rental-car details, discount/city-card coverage tables, opening hours, a rainy-day alternatives bank, a packing checklist, and a separate interactive Leaflet map page of attractions, restaurants and supermarkets with drive times and one-tap navigation. Includes a per-region deals & savings research playbook (attraction and restaurant coupons, guest/city cards, and region-active apps like Too Good To Go and TheFork). Real Wikimedia photos, no invented image URLs. Use when asked to build a trip/holiday/vacation website or itinerary site for sightseeing (NOT trails/hiking/running — for those use trail-route-planner).
+name: trip-planner
+description: Build and deploy a family trip website — day-by-day itinerary per base, hotels, discount-card coverage, opening hours, packing list, plus an interactive Leaflet map of attractions, restaurants and supermarkets with drive times and one-tap navigation. Every photo, coordinate and opening hour is verified, never invented. Use when asked to build a trip, holiday or vacation website or itinerary site for sightseeing. NOT for trails, hiking, running or GPX routes — use trail-route-planner for those.
 ---
 
-# Vacation site builder
+# Trip planner
 
 Turn "build me a website for our family trip" into a polished, deployed site —
 **sightseeing, attractions, food and logistics, no trails or hiking**. If the user
@@ -83,11 +83,24 @@ Wikimedia Commons file, then:
 python3 scripts/fetch_photos.py photos.json img/
 ```
 
-`photos.json` is `[{ "key": "...", "file": "Commons File.jpg" | "search": "..." }]`.
-It downloads real images to `img/<key>.jpg` and writes `img/credits.json`. Reference
-photos in the HTML as `img/<key>.jpg`. **Anything unresolved gets a gradient tile**
-(`.banner.grad` / `.ph` classes), never a fake photo. Render `credits.json` in the
-footer — CC licenses require attribution (the template already fetches it).
+`photos.json` is `[{ "key": "...", "file": "Commons File.jpg" | "search": "...",
+"must": ["Place"] }]`. It downloads real images and writes `img/credits.json`.
+Reference each photo in the HTML using `credits[key].src` (it carries the real
+extension — usually `.jpg`, sometimes `.png`).
+
+The script rejects anything that is not a raster photograph: SVG logos, coats of
+arms, maps and PDFs all live in the same Commons namespace and would otherwise be
+saved as `<key>.jpg` and render broken. It also byte-checks the download.
+
+**Read the filename it prints for every photo.** It guarantees a real,
+correctly-typed, correctly-attributed image — it cannot guarantee the image is of
+the thing you meant ("Salzburg old town" once resolved to a photo of a scale
+*model* of the old town). Add `"must": ["Salzburg"]` to anchor a search, and pin
+the exact `"file"` once you have confirmed a good one.
+
+**Anything unresolved gets a gradient tile** (`.banner.grad` / `.ph` classes),
+never a fake photo. Render `credits.json` in the footer — CC licenses require
+attribution (the template already fetches it).
 
 ### 4. Build the pages from the templates
 Copy the three reference files into the project and fill them with real content:
@@ -97,9 +110,19 @@ Copy the three reference files into the project and fill them with real content:
 
 They are complete, working files. Duplicate the marked blocks (one `<section>` per
 base, one `.day` per day, one POI per attraction). Keep the design tokens identical
-across both pages so they read as one site. Set the countdown date, the section
-ids, and the nav links. For RTL, set `<html dir="rtl">` and an RTL font; the layout
-uses logical properties so it already flips.
+across both pages so they read as one site. For RTL, set `<html dir="rtl">` and an
+RTL font; the layout uses logical properties so it already flips.
+
+**Both templates have a `TEMPLATE CONFIG` block — read it before editing.**
+- `maps.html` builds one map per key in `MAPDATA`, paired with the Nth
+  `<section>`: base 1 → `#map1 #ctrl-1 #list-1 #count-1 #legend-1`, base 2 → `…2`,
+  and so on. Any number of bases works. If the data and the sections disagree in
+  either direction, the console says exactly which ids to fix — check it.
+- `itinerary.html` takes the departure date from `CONFIG.departure` (`YYYY-MM-DD`).
+  The config block also lists the per-trip edits that are *not* driven from JS:
+  `<title>`, the `.logo`, the nav `<li>`s, the hero eyebrow/`<h1>`, the
+  `data-to` stat counters and the footer. Work through that list — a leftover
+  "Vacation 2026" in the header is the most common miss.
 
 Data hygiene that makes or breaks it:
 - Every map POI needs a **real** `lat,lng`, a `category`, `drive_min`, and
@@ -110,8 +133,16 @@ Data hygiene that makes or breaks it:
   `.banner.grad`. Never stretch one photo across unrelated days.
 
 ### 5. Verify before shipping
+- Run the template test suite first — it catches the structural mistakes before
+  you look at content:
+  ```
+  python3 tests/test_maps.py     # coords, ARIA, XSS, mobile overflow
+  python3 tests/test_nbase.py    # every base builds; mismatches are reported
+  ```
 - Open both pages in a browser (`vercel:verification` or the `run` skill / a local
-  `python3 -m http.server`). Check: countdown shows a sane number, maps render with
+  `python3 -m http.server`). **Check the browser console** — the templates report
+  skipped POIs and base/section mismatches there rather than failing silently.
+  Then check: countdown shows a sane number, maps render with
   pins, filters/search/sort work, nav scroll-spy highlights, dark mode looks right,
   and it does not scroll horizontally on mobile width.
 - Spot-check 2–3 drive times and opening hours against source — if one is fabricated
@@ -136,9 +167,14 @@ the URL.
 
 ## Files
 - `scripts/fetch_photos.py` — Wikimedia Commons downloader + `credits.json` writer.
+  Rejects non-photos (SVG/PDF/drawings), byte-checks each download, supports
+  `"must"` to anchor a search to the right place.
 - `references/itinerary.html` — the main page template (full design system + JS).
-- `references/maps.html` — interactive Leaflet maps page template.
+- `references/maps.html` — interactive Leaflet maps page template. Builds one map
+  per key in `MAPDATA`, so any number of bases works.
 - `references/maps-data.js` — POI data schema with sample entries.
 - `references/coupon-research.md` — per-region deals & savings playbook (attraction/
   restaurant coupons, guest/city cards, surplus-food & loyalty apps like Too Good To
   Go and TheFork), with verification discipline and where findings fit on the site.
+- `tests/test_maps.py`, `tests/test_nbase.py` — headless browser checks on the
+  templates. Run them after editing a template.

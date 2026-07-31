@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/banner.jpg" alt="vacation-site-builder — your family trip, as a website" width="100%">
+  <img src="docs/banner.jpg" alt="trip-planner — your family trip, as a website" width="100%">
 </p>
 
 <p align="center">
@@ -69,30 +69,52 @@ Light/dark theme, reveal animations, sticky scroll-spy nav, and full RTL (Hebrew
 ## Install
 
 ```bash
-git clone https://github.com/sdanpo/vacation-site-builder ~/.claude/skills/vacation-site-builder
+git clone https://github.com/meiriohad76-oss/trip_planner ~/.claude/skills/trip-planner
 ```
 
-Then ask Claude Code to build a vacation site, or run `/vacation-site-builder`.
+Then ask Claude Code to build a trip site, or run `/trip-planner`.
 
 **A good first prompt:**
 
-> Build a vacation site for our family trip to Austria, 5–19 Aug 2026.
+> Build a trip site for our family trip to Austria, 5–19 Aug 2026.
 > Bases: Werfenweng (nights 1–3), Ellmau (4–8), Mayrhofen (9–11), Ötz (12–15).
 > Kids are 8 and 12. We have a rental car. Hebrew, RTL.
 
 ## Layout
 
 ```
-vacation-site-builder/
+trip-planner/
 ├── SKILL.md                    # workflow + guardrails
 ├── scripts/
 │   └── fetch_photos.py         # Wikimedia Commons downloader + credits.json
-└── references/
-    ├── itinerary.html          # main page template (full design system + JS)
-    ├── maps.html               # interactive Leaflet maps page
-    ├── maps-data.js            # POI data schema with samples
-    └── coupon-research.md      # per-region deals & savings playbook
+├── references/
+│   ├── itinerary.html          # main page template (full design system + JS)
+│   ├── maps.html               # interactive Leaflet maps page
+│   ├── maps-data.js            # POI data schema with samples
+│   └── coupon-research.md      # per-region deals & savings playbook
+└── tests/
+    ├── test_maps.py            # headless render: coords, ARIA, XSS, mobile
+    └── test_nbase.py           # N-base builds + data/section mismatch errors
 ```
+
+## Tests
+
+The templates ship with a headless browser suite, so a change to `maps.html`
+can be checked rather than eyeballed:
+
+```bash
+pip install playwright && playwright install chromium
+python3 tests/test_maps.py
+python3 tests/test_nbase.py
+```
+
+`test_maps.py` feeds the template deliberately hostile data — string coordinates,
+an out-of-range latitude, a missing longitude, a non-numeric drive time and a
+name containing `<img onerror=…>` — and asserts the page degrades cleanly:
+bad points are dropped with a console warning instead of throwing, nav links
+stay well-formed, the injected markup renders as inert text, and there is no
+horizontal overflow at 390px. `test_nbase.py` builds 5 bases and checks that a
+data/section mismatch in either direction produces a specific console error.
 
 ## Sibling skill
 

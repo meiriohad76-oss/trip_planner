@@ -48,7 +48,7 @@ invented. A destination with no real photo gets a gradient tile in the HTML
 import json, sys, os, re, time, urllib.parse, urllib.request, urllib.error
 
 API = "https://commons.wikimedia.org/w/api.php"
-UA  = "vacation-site-builder/1.0 (Claude Code skill; contact via repo owner)"
+UA  = "trip-planner/1.0 (Claude Code skill; contact via repo owner)"
 
 
 _last_call = [0.0]
