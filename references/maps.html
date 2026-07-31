@@ -177,14 +177,37 @@
   function haversine(a,b,c,d){var R=6371,x=(c-a)*Math.PI/180,y=(d-b)*Math.PI/180;var s=Math.sin(x/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(y/2)**2;return R*2*Math.atan2(Math.sqrt(s),Math.sqrt(1-s));}
   function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m];});}
   function makeIcon(cat, opts){opts=opts||{};var c=CATS[cat]||{emoji:'📍',color:'#0f766e'};var em=opts.hotel?'🏡':c.emoji;var bg=opts.hotel?'#0f766e':c.color;return L.divIcon({html:'<div class="pin'+(opts.hotel?' hotelpin':'')+'"><div class="pin-i" style="background:'+bg+'"><span>'+em+'</span></div></div>',className:'pinwrap',iconSize:[30,30],iconAnchor:[15,29],popupAnchor:[0,-28]});}
-  function navLinks(p){var w='https://waze.com/ul?ll='+p.lat+','+p.lng+'&navigate=yes',g='https://www.google.com/maps/search/?api=1&query='+p.lat+','+p.lng;return '<a class="navbtn waze" target="_blank" rel="noopener" href="'+w+'">'+SVG_WAZE+'Waze</a><a class="navbtn gmap" target="_blank" rel="noopener" href="'+g+'">'+SVG_PIN+'Maps</a>';}
+  /* Coordinates are hand-authored in maps-data.js, so treat them as untrusted:
+     a string, a swapped pair or a typo'd lat must not become a broken nav link
+     that a family taps on the road. Returns null when unusable. */
+  function coord(p){
+    var la=Number(p.lat), ln=Number(p.lng);
+    if(!isFinite(la)||!isFinite(ln))return null;
+    if(la<-90||la>90||ln<-180||ln>180)return null;
+    return la.toFixed(6)+','+ln.toFixed(6);
+  }
+  function num(v,unit){return isFinite(Number(v))?Number(v)+(unit||''):'—';}
+  function navLinks(p){
+    var ll=coord(p);
+    if(!ll)return '<span class="badge closed">✕ No verified coordinates</span>';
+    var q=encodeURIComponent(ll);
+    var w='https://waze.com/ul?ll='+q+'&navigate=yes',
+        g='https://www.google.com/maps/search/?api=1&query='+q;
+    return '<a class="navbtn waze" target="_blank" rel="noopener" href="'+w+'" aria-label="Navigate to '+esc(p.name)+' with Waze">'+SVG_WAZE+'Waze</a><a class="navbtn gmap" target="_blank" rel="noopener" href="'+g+'" aria-label="Navigate to '+esc(p.name)+' with Google Maps">'+SVG_PIN+'Maps</a>';
+  }
   function sundayBadge(p){if(p.category!=='supermarket')return '';var s=p.sunday||'closed';if(s==='open')return '<span class="badge open">✓ Open Sundays</span>';if(s==='limited')return '<span class="badge limited">◐ Sun — limited</span>';return '<span class="badge closed">✕ Closed Sundays</span>';}
   function badges(p){var b=sundayBadge(p);if(p.pass)b+='<span class="badge card">🎟️ Pass · free</span>';if(p.hours)b+='<span class="badge">🕘 '+esc(p.hours)+'</span>';return b;}
-  function popupHtml(p){var c=CATS[p.category]||{label:''};return '<div class="pop"><h4>'+esc(p.name)+'</h4><div class="pcat">'+(c.emoji||'')+' '+esc(c.label)+' · '+p.drive_min+' min drive · ~'+p._km+' km</div>'+(p.desc?'<p>'+esc(p.desc)+'</p>':'')+(p.hours?'<div class="prow"><b>🕘 </b>'+esc(p.hours)+'</div>':'')+(p.pass?'<div class="prow"><b>🎟️ Pass:</b> free entry</div>':'')+'<div class="plinks">'+navLinks(p)+'</div></div>';}
+  function popupHtml(p){var c=CATS[p.category]||{label:''};return '<div class="pop"><h4>'+esc(p.name)+'</h4><div class="pcat">'+(c.emoji||'')+' '+esc(c.label)+' · '+num(p.drive_min,' min drive')+' · ~'+num(p._km,' km')+'</div>'+(p.desc?'<p>'+esc(p.desc)+'</p>':'')+(p.hours?'<div class="prow"><b>🕘 </b>'+esc(p.hours)+'</div>':'')+(p.pass?'<div class="prow"><b>🎟️ Pass:</b> free entry</div>':'')+'<div class="plinks">'+navLinks(p)+'</div></div>';}
 
   function build(cfg){
-    var hotel=cfg.hotel, pois=cfg.pois;
-    pois.forEach(function(p,i){p._id=i;p._km=Math.round(haversine(hotel.lat,hotel.lng,p.lat,p.lng)*10)/10;});
+    var hotel=cfg.hotel, pois=cfg.pois||[];
+    if(!coord(hotel)){console.error('maps-data.js: base "'+(hotel&&hotel.name)+'" has no valid lat/lng — skipping this map.');return;}
+    /* Drop POIs with unusable coordinates rather than letting Leaflet throw and
+       take the whole map down. Loud in the console so it gets fixed, not hidden. */
+    var bad=pois.filter(function(p){return !coord(p);});
+    if(bad.length)console.warn('maps-data.js: '+bad.length+' POI(s) skipped for invalid lat/lng:',bad.map(function(p){return p.name;}));
+    pois=pois.filter(function(p){return coord(p);});
+    pois.forEach(function(p,i){p._id=i;p._km=Math.round(haversine(Number(hotel.lat),Number(hotel.lng),Number(p.lat),Number(p.lng))*10)/10;});
     var tiles=dark?'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png':'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
     var map=L.map(cfg.mapId,{scrollWheelZoom:false,zoomControl:true}).setView([hotel.lat,hotel.lng],11);
     L.tileLayer(tiles,{maxZoom:19,subdomains:'abcd',attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'}).addTo(map);
@@ -199,27 +222,45 @@
     var present=ORDER.filter(function(cat){return pois.some(function(p){return p.category===cat;});});
     var counts={}; present.forEach(function(cat){counts[cat]=pois.filter(function(p){return p.category===cat;}).length;});
     var ctrl=document.getElementById(cfg.ctrlId);
-    var fb='<button class="fb all on" data-cat="__all">All <span class="cnt">'+pois.length+'</span></button>';
-    present.forEach(function(cat){var c=CATS[cat];fb+='<button class="fb on" data-cat="'+cat+'" style="--cc:'+c.color+'"><span class="dot" style="background:'+c.color+'"></span>'+c.emoji+' '+c.label+' <span class="cnt">'+counts[cat]+'</span></button>';});
-    ctrl.innerHTML='<div class="ctrl-row"><label class="search"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg><input type="search" placeholder="Search by name or description…" data-role="search"></label><div class="sortsel"><span>Sort:</span><select data-role="sort"><option value="dist">Nearest to hotel</option><option value="name">Name (A→Z)</option><option value="cat">Category</option></select></div></div><div class="fbs">'+fb+'</div>';
+    var uid=cfg.ctrlId;
+    var fb='<button type="button" class="fb all on" data-cat="__all" aria-pressed="true">All <span class="cnt">'+pois.length+'</span></button>';
+    present.forEach(function(cat){var c=CATS[cat];fb+='<button type="button" class="fb on" data-cat="'+cat+'" aria-pressed="true" style="--cc:'+c.color+'"><span class="dot" aria-hidden="true" style="background:'+c.color+'"></span><span aria-hidden="true">'+c.emoji+'</span> '+c.label+' <span class="cnt">'+counts[cat]+'</span></button>';});
+    ctrl.innerHTML='<div class="ctrl-row"><label class="search" for="'+uid+'-q"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg><input id="'+uid+'-q" type="search" placeholder="Search by name or description…" aria-label="Search places near '+esc(hotel.name)+'" data-role="search"></label><div class="sortsel"><label for="'+uid+'-sort">Sort:</label><select id="'+uid+'-sort" data-role="sort"><option value="dist">Nearest to hotel</option><option value="name">Name (A→Z)</option><option value="cat">Category</option></select></div></div><div class="fbs" role="group" aria-label="Filter places by category">'+fb+'</div>';
 
     ctrl.querySelectorAll('.fb').forEach(function(btn){btn.addEventListener('click',function(){var cat=btn.dataset.cat;if(cat==='__all'){var turnOn=!btn.classList.contains('on')||state.cats.size<present.length;state.cats=new Set(turnOn?present:[]);}else{if(state.cats.has(cat))state.cats.delete(cat);else state.cats.add(cat);}syncFilterUI();render();});});
     ctrl.querySelector('[data-role=search]').addEventListener('input',function(e){state.q=e.target.value.toLowerCase().trim();render();});
     ctrl.querySelector('[data-role=sort]').addEventListener('change',function(e){state.sort=e.target.value;render();});
-    function syncFilterUI(){ctrl.querySelectorAll('.fb').forEach(function(b){var cat=b.dataset.cat;if(cat==='__all')b.classList.toggle('on',state.cats.size===present.length);else b.classList.toggle('on',state.cats.has(cat));});}
+    function syncFilterUI(){ctrl.querySelectorAll('.fb').forEach(function(b){var cat=b.dataset.cat;var on=cat==='__all'?state.cats.size===present.length:state.cats.has(cat);b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');});}
 
     var listBox=document.getElementById(cfg.listId), countEl=document.getElementById(cfg.countId);
+    /* Screen-reader wiring: the result list is a list, the count announces
+       itself when filters change, and the Leaflet canvas gets a name. */
+    listBox.setAttribute('role','list');
+    listBox.setAttribute('aria-label','Places near '+hotel.name);
+    countEl.setAttribute('role','status');
+    countEl.setAttribute('aria-live','polite');
+    countEl.setAttribute('aria-atomic','true');
+    var mapEl=document.getElementById(cfg.mapId);
+    mapEl.setAttribute('role','application');
+    mapEl.setAttribute('aria-label','Map of places near '+hotel.name+'. The list beside it has the same places in text form.');
     function visible(){return pois.filter(function(p){if(!state.cats.has(p.category))return false;if(state.q&&(p.name+' '+(p.desc||'')).toLowerCase().indexOf(state.q)<0)return false;return true;}).sort(function(a,b){if(state.sort==='name')return a.name.localeCompare(b.name);if(state.sort==='cat')return ORDER.indexOf(a.category)-ORDER.indexOf(b.category)||a._km-b._km;return a._km-b._km;});}
     function setActive(id,pan){active=id;listBox.querySelectorAll('.lc').forEach(function(el){el.classList.toggle('active',+el.dataset.id===id);});var m=markers[id];if(m){m.openPopup();if(pan!==false)map.panTo(m.getLatLng());var el=listBox.querySelector('.lc[data-id="'+id+'"]');if(el)el.scrollIntoView({block:'nearest',behavior:'smooth'});}}
     map.on('click',function(){active=null;listBox.querySelectorAll('.lc').forEach(function(el){el.classList.remove('active');});});
 
     function render(){var vis=visible();Object.keys(markers).forEach(function(id){var on=vis.some(function(p){return p._id==id;});if(on){if(!map.hasLayer(markers[id]))markers[id].addTo(map);}else if(map.hasLayer(markers[id]))map.removeLayer(markers[id]);});
       countEl.textContent=vis.length+' of '+pois.length+' places';
-      listBox.innerHTML=vis.map(function(p){var c=CATS[p.category]||{};return '<div class="lc" data-id="'+p._id+'" style="--cc:'+(c.color||'#0f766e')+'"><h4>'+(c.emoji||'')+' '+esc(p.name)+'</h4><div class="cat">'+esc(c.label||'')+' · '+p.drive_min+' min · ~'+p._km+' km</div>'+(p.desc?'<p>'+esc(p.desc)+'</p>':'')+'<div class="badges">'+badges(p)+'</div><div class="navs">'+navLinks(p)+'</div></div>';}).join('');
-      listBox.querySelectorAll('.lc').forEach(function(el){el.addEventListener('click',function(e){if(e.target.closest('a'))return;setActive(+el.dataset.id,true);});});}
+      listBox.innerHTML=vis.map(function(p){var c=CATS[p.category]||{};return '<div class="lc" role="listitem" tabindex="0" data-id="'+p._id+'" style="--cc:'+(c.color||'#0f766e')+'"><h4><span aria-hidden="true">'+(c.emoji||'')+'</span> '+esc(p.name)+'</h4><div class="cat">'+esc(c.label||'')+' · '+num(p.drive_min,' min')+' · ~'+num(p._km,' km')+'</div>'+(p.desc?'<p>'+esc(p.desc)+'</p>':'')+'<div class="badges">'+badges(p)+'</div><div class="navs">'+navLinks(p)+'</div></div>';}).join('');
+      listBox.querySelectorAll('.lc').forEach(function(el){
+        function open(e){if(e.target.closest('a'))return;setActive(+el.dataset.id,true);}
+        el.addEventListener('click',open);
+        /* keyboard parity: the card is focusable, so Enter/Space must work */
+        el.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();open(e);}});
+      });}
 
     var legend=document.getElementById(cfg.legendId);
-    legend.innerHTML=present.map(function(cat){var c=CATS[cat];return '<span><i style="background:'+c.color+'"></i>'+c.emoji+' '+c.label+'</span>';}).join('');
+    legend.setAttribute('role','list');
+    legend.setAttribute('aria-label','Map legend');
+    legend.innerHTML=present.map(function(cat){var c=CATS[cat];return '<span role="listitem"><i aria-hidden="true" style="background:'+c.color+'"></i><span aria-hidden="true">'+c.emoji+'</span> '+c.label+'</span>';}).join('');
     render();
   }
 
